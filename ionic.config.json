@@ -1,0 +1,7 @@
+{
+  "name": "album-copa",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
