@@ -2,22 +2,76 @@
   <IonPage>
     <IonHeader>
       <IonToolbar color="warning">
-        <IonTitle>⭐ Coletadas</IonTitle>
+        <IonTitle>⭐ Figurinhas Coletadas</IonTitle>
       </IonToolbar>
     </IonHeader>
 
     <IonContent class="ion-padding">
-      <h2>Suas figurinhas coletadas aparecerão aqui.</h2>
+
+      <IonCard>
+        <IonCardContent>
+          Você possui
+          <strong>{{ coletadas.length }}</strong>
+          figurinhas coletadas.
+        </IonCardContent>
+      </IonCard>
+
+      <IonList>
+
+        <IonItem
+          v-for="sticker in coletadas"
+          :key="sticker.id"
+        >
+          <IonLabel>
+            <h2>{{ sticker.nome }}</h2>
+            <p>{{ sticker.selecao }}</p>
+          </IonLabel>
+        </IonItem>
+
+      </IonList>
+
+      <p
+        v-if="coletadas.length === 0"
+        class="vazio"
+      >
+        Nenhuma figurinha coletada.
+      </p>
+
     </IonContent>
   </IonPage>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import {
   IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonContent
+  IonContent,
+  IonCard,
+  IonCardContent,
+  IonList,
+  IonItem,
+  IonLabel
 } from '@ionic/vue'
+
+import { useAlbum } from '@/composables/useAlbum'
+
+const { lista } = useAlbum()
+
+const coletadas = computed(() =>
+  lista.value.filter(
+    sticker => sticker.coletada
+  )
+)
 </script>
+
+<style scoped>
+.vazio{
+  text-align:center;
+  margin-top:30px;
+  color:gray;
+}
+</style>
