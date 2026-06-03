@@ -7,20 +7,61 @@
     </IonHeader>
 
     <IonContent class="ion-padding">
-      <h2>Perfil do Usuário</h2>
 
-      <p>Nome: Henrique</p>
-      <p>E-mail: henrique@email.com</p>
+      <IonCard>
+
+        <IonCardHeader>
+          <IonCardTitle>Henrique Araujo</IonCardTitle>
+        </IonCardHeader>
+
+        <IonCardContent>
+
+          <p>Email: henrique@email.com</p>
+
+          <p>
+            Figurinhas coletadas:
+            {{ coletadas }}
+          </p>
+
+          <IonButton
+            expand="block"
+            color="danger"
+          >
+            Sair
+          </IonButton>
+
+        </IonCardContent>
+
+      </IonCard>
+
     </IonContent>
   </IonPage>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import {
   IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonContent
+  IonContent,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonButton
 } from '@ionic/vue'
+
+import { useAlbum } from '@/composables/useAlbum'
+
+const { lista } = useAlbum()
+
+const coletadas = computed(
+  () =>
+    lista.value.filter(
+      s => s.coletada
+    ).length
+)
 </script>
