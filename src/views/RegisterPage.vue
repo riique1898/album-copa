@@ -125,3 +125,22 @@ function cadastrar() {
   router.push('/login')
 }
 </script>
+
+<style scoped>
+ion-content {
+  --background: #f4f7f5;
+}
+
+ion-card {
+  border-radius: 20px;
+  margin-top: 40px;
+}
+
+ion-card-title {
+  text-align: center;
+}
+
+ion-button {
+  margin-top: 12px;
+}
+</style>

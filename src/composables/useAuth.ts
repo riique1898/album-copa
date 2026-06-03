@@ -24,8 +24,13 @@ export function useAuth() {
     return false
   }
 
+  const logout = () => {
+    usuarioLogado.value = null
+  }
+
   return {
     usuarioLogado,
-    login
+    login,
+    logout
   }
 }

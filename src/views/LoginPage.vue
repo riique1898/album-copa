@@ -108,3 +108,27 @@ function entrar() {
   }
 }
 </script>
+
+<style scoped>
+ion-content {
+  --background: linear-gradient(
+    180deg,
+    #1b5e20,
+    #43a047
+  );
+}
+
+ion-card {
+  margin-top: 100px;
+  border-radius: 20px;
+}
+
+ion-card-title {
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+ion-button {
+  margin-top: 12px;
+}
+</style>

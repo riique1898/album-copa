@@ -68,6 +68,32 @@ const coletadas = computed(() =>
 </script>
 
 <style scoped>
+ion-content {
+  --background: #f4f7f5;
+}
+
+ion-card {
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+
+ion-item {
+  margin-bottom: 10px;
+  border-radius: 14px;
+  --background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+ion-item h2 {
+  font-weight: 700;
+  color: #f57c00;
+}
+
+ion-item p {
+  color: #666;
+}
+
 .vazio {
   text-align: center;
   margin-top: 30px;
