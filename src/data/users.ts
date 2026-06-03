@@ -1,7 +1,7 @@
 export const users = [
   {
     nome: 'Henrique',
-    email: 'admin@copa.com',
-    senha: '123456'
+    email: 'henrique16.schenkel@gmail.com',
+    senha: 'Rique1609@'
   }
 ]

@@ -3,7 +3,7 @@
 
     <IonHeader>
       <IonToolbar color="success">
-        <IonTitle>🏆 Login</IonTitle>
+        <IonTitle>Login</IonTitle>
       </IonToolbar>
     </IonHeader>
 
