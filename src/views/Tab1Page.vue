@@ -7,25 +7,34 @@
     </IonHeader>
 
     <IonContent class="ion-padding">
-      <h2>Bem-vindo ao seu álbum!</h2>
 
       <IonCard>
         <IonCardContent>
-          Total de figurinhas: 50
+          Total de Figurinhas:
+          {{ lista.length }}
         </IonCardContent>
       </IonCard>
 
-      <IonCard>
-        <IonCardContent>
-          Coletadas: 12
-        </IonCardContent>
-      </IonCard>
+      <IonList>
 
-      <IonCard>
-        <IonCardContent>
-          Pendentes: 38
-        </IonCardContent>
-      </IonCard>
+        <IonItem
+          v-for="sticker in lista"
+          :key="sticker.id"
+        >
+          <IonLabel>
+            <h2>{{ sticker.nome }}</h2>
+            <p>{{ sticker.selecao }}</p>
+          </IonLabel>
+
+          <IonCheckbox
+            :checked="sticker.coletada"
+            @ionChange="toggleColetada(sticker.id)"
+          />
+
+        </IonItem>
+
+      </IonList>
+
     </IonContent>
   </IonPage>
 </template>
@@ -38,6 +47,17 @@ import {
   IonTitle,
   IonContent,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonCheckbox
 } from '@ionic/vue'
+
+import { useAlbum } from '@/composables/useAlbum'
+
+const {
+  lista,
+  toggleColetada
+} = useAlbum()
 </script>
