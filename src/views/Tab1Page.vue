@@ -1,10 +1,10 @@
 <template>
   <IonPage>
-    <IonHeader>
-      <IonToolbar color="success">
-        <IonTitle>🏆 Álbum da Copa</IonTitle>
-      </IonToolbar>
-    </IonHeader>
+
+    <AppHeader
+      titulo="🏆 Álbum da Copa"
+      cor="success"
+    />
 
     <IonContent class="ion-padding">
 
@@ -58,6 +58,7 @@
       </IonList>
 
     </IonContent>
+
   </IonPage>
 </template>
 
@@ -66,9 +67,6 @@ import { ref, computed } from 'vue'
 
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonCard,
   IonCardContent,
@@ -81,12 +79,10 @@ import {
   IonSegmentButton
 } from '@ionic/vue'
 
+import AppHeader from '@/components/AppHeader.vue'
 import { useAlbum } from '@/composables/useAlbum'
 
-const {
-  lista,
-  toggleColetada
-} = useAlbum()
+const { lista, toggleColetada } = useAlbum()
 
 const pesquisa = ref('')
 const filtro = ref('todas')

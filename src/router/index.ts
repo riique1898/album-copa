@@ -15,6 +15,16 @@ const routes: Array<RouteRecordRaw> = [
   },
 
   {
+  path: '/register',
+  component: () => import('@/views/RegisterPage.vue')
+},
+
+{
+  path: '/reset-password',
+  component: () => import('@/views/ResetPasswordPage.vue')
+},
+
+  {
     path: '/tabs/',
     component: TabsPage,
     children: [

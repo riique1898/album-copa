@@ -1,10 +1,10 @@
 <template>
   <IonPage>
-    <IonHeader>
-      <IonToolbar color="warning">
-        <IonTitle>⭐ Figurinhas Coletadas</IonTitle>
-      </IonToolbar>
-    </IonHeader>
+
+    <AppHeader
+      titulo="⭐ Figurinhas Coletadas"
+      cor="warning"
+    />
 
     <IonContent class="ion-padding">
 
@@ -38,6 +38,7 @@
       </p>
 
     </IonContent>
+
   </IonPage>
 </template>
 
@@ -46,9 +47,6 @@ import { computed } from 'vue'
 
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonCard,
   IonCardContent,
@@ -57,6 +55,7 @@ import {
   IonLabel
 } from '@ionic/vue'
 
+import AppHeader from '@/components/AppHeader.vue'
 import { useAlbum } from '@/composables/useAlbum'
 
 const { lista } = useAlbum()
@@ -69,9 +68,9 @@ const coletadas = computed(() =>
 </script>
 
 <style scoped>
-.vazio{
-  text-align:center;
-  margin-top:30px;
-  color:gray;
+.vazio {
+  text-align: center;
+  margin-top: 30px;
+  color: gray;
 }
 </style>

@@ -1,22 +1,24 @@
 <template>
   <IonPage>
-    <IonHeader>
-      <IonToolbar color="primary">
-        <IonTitle>👤 Perfil</IonTitle>
-      </IonToolbar>
-    </IonHeader>
+
+    <AppHeader
+      titulo="👤 Perfil"
+      cor="primary"
+    />
 
     <IonContent class="ion-padding">
 
       <IonCard>
 
         <IonCardHeader>
-          <IonCardTitle>Henrique Araujo</IonCardTitle>
+          <IonCardTitle>
+            Henrique Araujo
+          </IonCardTitle>
         </IonCardHeader>
 
         <IonCardContent>
 
-          <p>Email: henrique@email.com</p>
+          <p>Email: admin@copa.com</p>
 
           <p>
             Figurinhas coletadas:
@@ -35,6 +37,7 @@
       </IonCard>
 
     </IonContent>
+
   </IonPage>
 </template>
 
@@ -43,9 +46,6 @@ import { computed } from 'vue'
 
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -54,6 +54,7 @@ import {
   IonButton
 } from '@ionic/vue'
 
+import AppHeader from '@/components/AppHeader.vue'
 import { useAlbum } from '@/composables/useAlbum'
 
 const { lista } = useAlbum()
