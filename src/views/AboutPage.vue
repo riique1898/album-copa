@@ -43,6 +43,14 @@
             🔒 Política de Privacidade
           </IonButton>
 
+          <IonButton
+            expand="block"
+            color="medium"
+            @click="router.back()"
+          >
+            ← Voltar
+          </IonButton>
+
         </IonCardContent>
 
       </IonCard>
@@ -53,6 +61,8 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
 import {
   IonPage,
   IonContent,
@@ -64,6 +74,8 @@ import {
 } from '@ionic/vue'
 
 import AppHeader from '@/components/AppHeader.vue'
+
+const router = useRouter()
 </script>
 
 <style scoped>
