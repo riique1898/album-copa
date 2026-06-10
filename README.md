@@ -1,4 +1,3 @@
-=======
 Nome: Henrique Schenkel Araujo
 Curso: Informática
 
