@@ -24,6 +24,11 @@ const routes: Array<RouteRecordRaw> = [
   component: () => import('@/views/ResetPasswordPage.vue')
 },
 
+{
+  path: '/about',
+  component: () => import('@/views/AboutPage.vue')
+},
+
   {
     path: '/tabs/',
     component: TabsPage,

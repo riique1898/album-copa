@@ -8,32 +8,45 @@
 
     <IonContent class="ion-padding">
 
-      <IonCard>
+      <IonCard class="perfil-card">
 
         <IonCardHeader>
+
+          <div class="avatar">
+            👤
+          </div>
+
           <IonCardTitle>
             {{ usuario?.nome || 'Usuário' }}
           </IonCardTitle>
+
         </IonCardHeader>
 
         <IonCardContent>
 
           <p>
-            Email:
-            {{ usuario?.email || '-' }}
+            📧 {{ usuario?.email || '-' }}
           </p>
 
           <p>
-            Figurinhas coletadas:
+            ⚽ Figurinhas coletadas:
             {{ coletadas }}
           </p>
+
+          <IonButton
+            expand="block"
+            color="primary"
+            router-link="/about"
+          >
+            ℹ️ Sobre o Aplicativo
+          </IonButton>
 
           <IonButton
             expand="block"
             color="danger"
             @click="sair"
           >
-            Sair
+            🚪 Sair
           </IonButton>
 
         </IonCardContent>
@@ -88,23 +101,37 @@ ion-content {
   --background: #f4f7f5;
 }
 
-ion-card {
+.perfil-card {
   border-radius: 20px;
   text-align: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
+.avatar {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 15px auto;
+  border-radius: 50%;
+  background: #1976d2;
+  color: white;
+  font-size: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 ion-card-title {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   color: #1565c0;
+  font-weight: 700;
 }
 
 ion-card-content p {
-  margin: 10px 0;
+  margin: 12px 0;
   font-size: 1rem;
 }
 
 ion-button {
-  margin-top: 20px;
+  margin-top: 12px;
 }
 </style>
