@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+Nome: Henrique Schenkel Araujo
+Curso: Informática
+
+>>>>>>> 667d7b1d610c82d4ba8aceb785337bfab74d72c2
 # 🏆 Álbum de Figurinhas da Copa do Mundo
 
 Projeto desenvolvido com Vue 3 + Ionic para simular um aplicativo de álbum de figurinhas da Copa do Mundo.
@@ -98,4 +104,8 @@ O projeto foi organizado com foco em componentização:
 
 ```bash
 npm install
+<<<<<<< HEAD
 ionic serve
+=======
+ionic serve
+>>>>>>> 667d7b1d610c82d4ba8aceb785337bfab74d72c2

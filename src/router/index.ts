@@ -29,6 +29,16 @@ const routes: Array<RouteRecordRaw> = [
   component: () => import('@/views/AboutPage.vue')
 },
 
+{
+  path: '/terms',
+  component: () => import('@/views/TermsPage.vue')
+},
+
+{
+  path: '/privacy',
+  component: () => import('@/views/PrivacyPage.vue')
+},
+
   {
     path: '/tabs/',
     component: TabsPage,

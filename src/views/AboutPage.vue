@@ -18,7 +18,9 @@
 
         <IonCardContent>
 
-          <p><strong>Versão:</strong> 1.0.0</p>
+          <p>
+            <strong>Versão:</strong> 1.0.0
+          </p>
 
           <p>
             Aplicativo desenvolvido para a disciplina utilizando
@@ -27,18 +29,16 @@
 
           <IonButton
             expand="block"
-            fill="outline"
-            href="https://www.termsfeed.com/live/terms-and-conditions"
-            target="_blank"
+            color="primary"
+            router-link="/terms"
           >
             📄 Termo de Uso
           </IonButton>
 
           <IonButton
             expand="block"
-            fill="outline"
-            href="https://www.termsfeed.com/live/privacy-policy"
-            target="_blank"
+            color="secondary"
+            router-link="/privacy"
           >
             🔒 Política de Privacidade
           </IonButton>
@@ -72,10 +72,20 @@ ion-content {
 }
 
 ion-card {
-  border-radius: 18px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+ion-card-title {
+  font-size: 1.4rem;
 }
 
 p {
-  margin-bottom: 15px;
+  margin: 15px 0;
+}
+
+ion-button {
+  margin-top: 12px;
 }
 </style>
