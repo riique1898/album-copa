@@ -19,6 +19,14 @@
 
           <p>❌ Pendentes: {{ pendentes }}</p>
 
+          <hr>
+
+          <p>⚪ Comuns: {{ comuns }}</p>
+
+          <p>🔵 Raras: {{ raras }}</p>
+
+          <p>✨ Brilhantes: {{ brilhantes }}</p>
+
         </IonCardContent>
       </IonCard>
 
@@ -90,6 +98,24 @@ const pendentes = computed(() => {
   return total.value - coletadas.value
 })
 
+const comuns = computed(() => {
+  return lista.value.filter(
+    sticker => sticker.raridade === 'Comum'
+  ).length
+})
+
+const raras = computed(() => {
+  return lista.value.filter(
+    sticker => sticker.raridade === 'Rara'
+  ).length
+})
+
+const brilhantes = computed(() => {
+  return lista.value.filter(
+    sticker => sticker.raridade === 'Brilhante'
+  ).length
+})
+
 const figurinhasFiltradas = computed(() => {
 
   let resultado = lista.value
@@ -151,6 +177,11 @@ ion-content {
   margin: 8px 0;
 }
 
+.stats-card hr {
+  margin: 15px 0;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
 ion-searchbar {
   margin-bottom: 16px;
   --border-radius: 14px;
@@ -161,11 +192,9 @@ ion-segment {
   background: white;
   border-radius: 12px;
   padding: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 ion-segment-button {
-  border-radius: 10px;
   font-weight: 600;
 }
 </style>

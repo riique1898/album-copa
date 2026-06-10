@@ -1,5 +1,10 @@
 <template>
-  <IonCard class="sticker-card">
+  <IonCard
+    class="sticker-card"
+    :class="{
+      brilhante: sticker.raridade === 'Brilhante'
+    }"
+  >
 
     <div class="sticker-header">
       <img
@@ -10,16 +15,24 @@
     </div>
 
     <IonCardHeader>
+
       <IonCardTitle>
         {{ sticker.nome }}
       </IonCardTitle>
 
       <div class="selecao">
-        🇧🇷 {{ sticker.selecao }}
+        🌎 {{ sticker.selecao }}
       </div>
+
     </IonCardHeader>
 
     <IonCardContent>
+
+      <IonChip :color="corRaridade">
+        ⭐ {{ sticker.raridade }}
+      </IonChip>
+
+      <br>
 
       <IonChip
         :color="sticker.coletada ? 'success' : 'danger'"
@@ -45,6 +58,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import {
   IonCard,
   IonCardHeader,
@@ -54,7 +69,7 @@ import {
   IonButton
 } from '@ionic/vue'
 
-defineProps({
+const props = defineProps({
   sticker: {
     type: Object,
     required: true
@@ -62,23 +77,39 @@ defineProps({
 })
 
 defineEmits(['toggle'])
+
+const corRaridade = computed(() => {
+
+  switch (props.sticker.raridade) {
+
+    case 'Brilhante':
+      return 'warning'
+
+    case 'Rara':
+      return 'primary'
+
+    default:
+      return 'medium'
+  }
+
+})
 </script>
 
 <style scoped>
 .sticker-card {
   overflow: hidden;
   border-radius: 18px;
-  border: 3px solid #d4af37;
+  border: 2px solid #ddd;
   background: white;
   box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
+.brilhante {
+  border: 4px solid gold;
+  box-shadow: 0 0 20px rgba(255,215,0,0.6);
+}
+
 .sticker-header {
-  background: linear-gradient(
-    135deg,
-    #f8f8f8,
-    #eaeaea
-  );
   padding: 12px;
 }
 
@@ -92,19 +123,16 @@ defineEmits(['toggle'])
 
 ion-card-header {
   text-align: center;
-  padding-bottom: 8px;
 }
 
 ion-card-title {
   font-size: 1.4rem;
-  font-weight: 800;
-  color: #111;
+  font-weight: 700;
 }
 
 .selecao {
-  margin-top: 6px;
+  margin-top: 5px;
   color: #666;
-  font-size: 0.95rem;
 }
 
 ion-card-content {
@@ -112,11 +140,6 @@ ion-card-content {
 }
 
 ion-chip {
-  margin: 10px 0 15px 0;
-}
-
-ion-button {
-  --border-radius: 10px;
-  font-weight: 700;
+  margin: 6px;
 }
 </style>
