@@ -76,6 +76,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
 import {
   IonPage,
@@ -99,6 +100,8 @@ const confirmarSenha = ref('')
 
 const router = useRouter()
 
+const { cadastrar: cadastrarUsuario } = useAuth()
+
 function cadastrar() {
 
   if (
@@ -117,6 +120,17 @@ function cadastrar() {
 
   if (senha.value !== confirmarSenha.value) {
     alert('As senhas não coincidem')
+    return
+  }
+
+  const sucesso = cadastrarUsuario(
+    nome.value,
+    email.value,
+    senha.value
+  )
+
+  if (!sucesso) {
+    alert('Email já cadastrado')
     return
   }
 
