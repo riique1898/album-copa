@@ -94,9 +94,9 @@ const router = useRouter()
 
 const { login } = useAuth()
 
-function entrar() {
+async function entrar() {
 
-  const sucesso = login(
+  const sucesso = await login(
     email.value,
     senha.value
   )
@@ -106,6 +106,7 @@ function entrar() {
   } else {
     alert('Login inválido')
   }
+
 }
 </script>
 

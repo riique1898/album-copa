@@ -102,7 +102,7 @@ const router = useRouter()
 
 const { cadastrar: cadastrarUsuario } = useAuth()
 
-function cadastrar() {
+async function cadastrar() {
 
   if (
     !nome.value ||
@@ -123,7 +123,7 @@ function cadastrar() {
     return
   }
 
-  const sucesso = cadastrarUsuario(
+  const sucesso = await cadastrarUsuario(
     nome.value,
     email.value,
     senha.value
