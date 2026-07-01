@@ -1,42 +1,57 @@
 import { ref } from 'vue'
-import { users } from '@/data/users'
+
+import {
+  cadastrarUsuario,
+  realizarLogin,
+  buscarUsuarioEmail
+} from '@/services/database'
 
 const usuarioLogado = ref<any>(null)
 
 export function useAuth() {
 
-  const login = (email: string, senha: string) => {
+  async function login(
+    email: string,
+    senha: string
+  ) {
 
-    const usuario = users.find(
-      u => u.email === email && u.senha === senha
+    const usuarios = await realizarLogin(
+      email,
+      senha
     )
 
-    if (usuario) {
-      usuarioLogado.value = usuario
+    if (usuarios.length > 0) {
+
+      usuarioLogado.value = usuarios[0]
+
       return true
     }
 
     return false
   }
 
-  const cadastrar = (nome: string, email: string, senha: string) => {
+  async function cadastrar(
+    nome: string,
+    email: string,
+    senha: string
+  ) {
 
-    const existe = users.find(
-      u => u.email === email
-    )
+    const existe = await buscarUsuarioEmail(email)
 
-    if (existe) return false
+    if (existe.length > 0) {
+      return false
+    }
 
-    users.push({
+    await cadastrarUsuario(
       nome,
       email,
       senha
-    })
+    )
 
     return true
   }
 
-  const logout = () => {
+  function logout() {
     usuarioLogado.value = null
   }
 
@@ -46,4 +61,5 @@ export function useAuth() {
     cadastrar,
     logout
   }
+
 }
