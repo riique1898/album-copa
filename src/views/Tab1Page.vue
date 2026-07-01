@@ -8,33 +8,32 @@
 
     <IonContent class="ion-padding">
 
+      <!-- STATS -->
       <IonCard class="stats-card">
         <IonCardContent>
 
           <h2>🏆 Meu Álbum</h2>
 
           <p>📚 Total: {{ total }}</p>
-
           <p>✅ Coletadas: {{ coletadas }}</p>
-
           <p>❌ Pendentes: {{ pendentes }}</p>
 
-          <hr>
+          <hr />
 
           <p>⚪ Comuns: {{ comuns }}</p>
-
           <p>🔵 Raras: {{ raras }}</p>
-
           <p>✨ Brilhantes: {{ brilhantes }}</p>
 
         </IonCardContent>
       </IonCard>
 
+      <!-- SEARCH -->
       <IonSearchbar
         v-model="pesquisa"
         placeholder="Pesquisar jogador ou seleção"
       />
 
+      <!-- SEGMENT -->
       <IonSegment v-model="filtro">
 
         <IonSegmentButton value="todas">
@@ -51,8 +50,9 @@
 
       </IonSegment>
 
+      <!-- LISTA -->
       <StickerList
-        :stickers="figurinhasFiltradas"
+        :stickers="lista"
         @toggle="toggleColetada"
       />
 
@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 import {
   IonPage,
@@ -77,75 +77,78 @@ import {
 
 import AppHeader from '@/components/AppHeader.vue'
 import StickerList from '@/components/StickerList.vue'
+
 import { useAlbum } from '@/composables/useAlbum'
 
-const { lista, toggleColetada } = useAlbum()
+const {
+  lista,
+  toggleColetada,
+  carregarFigurinhas,
+  carregarColetadas,
+  carregarPendentes,
+  buscar
+} = useAlbum()
 
 const pesquisa = ref('')
 const filtro = ref('todas')
 
-const total = computed(() => {
-  return lista.value.length
-})
+/* =========================
+   FUNÇÃO CENTRAL (SEM BUG)
+========================= */
+async function atualizarLista() {
 
-const coletadas = computed(() => {
-  return lista.value.filter(
-    sticker => sticker.coletada
-  ).length
-})
-
-const pendentes = computed(() => {
-  return total.value - coletadas.value
-})
-
-const comuns = computed(() => {
-  return lista.value.filter(
-    sticker => sticker.raridade === 'Comum'
-  ).length
-})
-
-const raras = computed(() => {
-  return lista.value.filter(
-    sticker => sticker.raridade === 'Rara'
-  ).length
-})
-
-const brilhantes = computed(() => {
-  return lista.value.filter(
-    sticker => sticker.raridade === 'Brilhante'
-  ).length
-})
-
-const figurinhasFiltradas = computed(() => {
-
-  let resultado = lista.value
+  if (pesquisa.value && pesquisa.value.trim() !== '') {
+    await buscar(pesquisa.value)
+    return
+  }
 
   if (filtro.value === 'coletadas') {
-    resultado = resultado.filter(
-      sticker => sticker.coletada
-    )
+    await carregarColetadas()
+    return
   }
 
   if (filtro.value === 'pendentes') {
-    resultado = resultado.filter(
-      sticker => !sticker.coletada
-    )
+    await carregarPendentes()
+    return
   }
 
-  return resultado.filter(
-    sticker =>
-      sticker.nome
-        .toLowerCase()
-        .includes(
-          pesquisa.value.toLowerCase()
-        ) ||
-      sticker.selecao
-        .toLowerCase()
-        .includes(
-          pesquisa.value.toLowerCase()
-        )
-  )
-})
+  await carregarFigurinhas()
+}
+
+/* =========================
+   WATCH GLOBAL (LIMPO)
+========================= */
+watch([filtro, pesquisa], atualizarLista)
+
+/* =========================
+   INIT
+========================= */
+onMounted(atualizarLista)
+
+/* =========================
+   STATS
+========================= */
+const total = computed(() => lista.value.length)
+
+const coletadas = computed(() =>
+  lista.value.filter(s => s.coletada === 1).length
+)
+
+const pendentes = computed(() =>
+  total.value - coletadas.value
+)
+
+const comuns = computed(() =>
+  lista.value.filter(s => s.raridade === 'Comum').length
+)
+
+const raras = computed(() =>
+  lista.value.filter(s => s.raridade === 'Rara').length
+)
+
+const brilhantes = computed(() =>
+  lista.value.filter(s => s.raridade === 'Brilhante').length
+)
 </script>
 
 <style scoped>
@@ -154,11 +157,7 @@ ion-content {
 }
 
 .stats-card {
-  background: linear-gradient(
-    135deg,
-    #006847,
-    #009c5b
-  );
+  background: linear-gradient(135deg, #006847, #009c5b);
   color: white;
   text-align: center;
   border-radius: 18px;
@@ -177,7 +176,7 @@ ion-content {
   margin: 8px 0;
 }
 
-.stats-card hr {
+stats-card hr {
   margin: 15px 0;
   border: 1px solid rgba(255,255,255,0.3);
 }

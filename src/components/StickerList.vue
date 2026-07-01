@@ -10,14 +10,23 @@
 </template>
 
 <script setup lang="ts">
+
 import StickerCard from './StickerCard.vue'
 
-defineProps({
-  stickers: {
-    type: Array,
-    required: true
-  }
-})
+type Sticker = {
+  id: number
+  nome: string
+  selecao: string
+  foto: string
+  coletada: number
+}
 
-defineEmits(['toggle'])
+defineProps<{
+  stickers: Sticker[]
+}>()
+
+defineEmits<{
+  (e: 'toggle', id: number): void
+}>()
+
 </script>
