@@ -56,7 +56,29 @@ export async function initDatabase() {
     );
   `)
 
-  await popularFigurinhas()
+  await db.execute(`
+  CREATE TABLE IF NOT EXISTS achievement (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    descricao TEXT NOT NULL,
+    icone TEXT NOT NULL
+  );
+`)
+
+await db.execute(`
+  CREATE TABLE IF NOT EXISTS user_achievement (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    achievement_id INTEGER NOT NULL,
+    data_desbloqueio TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES usuario(id),
+    FOREIGN KEY(achievement_id) REFERENCES achievement(id)
+  );
+`)
+
+await popularFigurinhas()
+
+await popularConquistas()
 }
 
 // =========================
@@ -209,4 +231,192 @@ export async function popularFigurinhas() {
       [f.nome, f.selecao, f.foto, f.coletada]
     )
   }
+}
+
+export async function popularConquistas() {
+
+  const db = await getDb()
+
+  const res = await db.query(
+    `SELECT COUNT(*) as total FROM achievement`
+  )
+
+  const total = Number(res.values?.[0]?.total || 0)
+
+  if (total > 0) return
+
+  const conquistas = [
+
+    {
+      nome: 'Primeira Figurinha',
+      descricao: 'Colete sua primeira figurinha.',
+      icone: '🥇'
+    },
+
+    {
+      nome: 'Iniciante',
+      descricao: 'Colete 10 figurinhas.',
+      icone: '🎖️'
+    },
+
+    {
+      nome: 'Colecionador',
+      descricao: 'Colete 25 figurinhas.',
+      icone: '📚'
+    },
+
+    {
+      nome: 'Álbum em Construção',
+      descricao: 'Colete 50 figurinhas.',
+      icone: '🏆'
+    },
+
+    {
+      nome: 'Caçador de Raras',
+      descricao: 'Colete 5 figurinhas raras.',
+      icone: '💎'
+    },
+
+    {
+      nome: 'Especialista em Raras',
+      descricao: 'Colete 15 figurinhas raras.',
+      icone: '👑'
+    },
+
+    {
+      nome: 'Brilho Inicial',
+      descricao: 'Colete 3 figurinhas brilhantes.',
+      icone: '✨'
+    },
+
+    {
+      nome: 'Mestre das Brilhantes',
+      descricao: 'Colete 10 figurinhas brilhantes.',
+      icone: '🌟'
+    },
+
+    {
+      nome: 'Álbum Quase Completo',
+      descricao: 'Complete 80% do álbum.',
+      icone: '🥈'
+    },
+
+    {
+      nome: 'Campeão da Copa',
+      descricao: 'Complete 100% do álbum.',
+      icone: '🏅'
+    }
+
+  ]
+
+  for (const conquista of conquistas) {
+
+    await db.run(
+      `INSERT INTO achievement
+      (nome, descricao, icone)
+      VALUES (?, ?, ?)`,
+      [
+        conquista.nome,
+        conquista.descricao,
+        conquista.icone
+      ]
+    )
+
+  }
+
+}
+
+// =========================
+// CONQUISTAS
+// =========================
+
+export async function listarConquistas(userId: number) {
+
+  const db = await getDb()
+
+  const res = await db.query(
+    `
+    SELECT
+      a.id,
+      a.nome,
+      a.descricao,
+      a.icone,
+      ua.data_desbloqueio,
+      CASE
+        WHEN ua.id IS NULL THEN 0
+        ELSE 1
+      END AS desbloqueada
+    FROM achievement a
+    LEFT JOIN user_achievement ua
+      ON ua.achievement_id = a.id
+      AND ua.user_id = ?
+    ORDER BY a.id
+    `,
+    [userId]
+  )
+
+  return res.values || []
+
+}
+
+export async function desbloquearConquista(
+  userId: number,
+  achievementId: number
+) {
+
+  const db = await getDb()
+
+  const existe = await db.query(
+    `
+    SELECT *
+    FROM user_achievement
+    WHERE user_id = ?
+    AND achievement_id = ?
+    `,
+    [userId, achievementId]
+  )
+
+  if ((existe.values?.length || 0) > 0) return
+
+  await db.run(
+    `
+    INSERT INTO user_achievement
+    (user_id, achievement_id, data_desbloqueio)
+    VALUES (?, ?, ?)
+    `,
+    [
+      userId,
+      achievementId,
+      new Date().toISOString()
+    ]
+  )
+
+}
+
+export async function verificarConquistas(userId: number) {
+
+  const db = await getDb()
+
+  const res = await db.query(
+    `
+    SELECT COUNT(*) as total
+    FROM figurinha
+    WHERE coletada = 1
+    `
+  )
+
+  const coletadas = Number(res.values?.[0]?.total || 0)
+
+  if (coletadas >= 1)
+    await desbloquearConquista(userId, 1)
+
+  if (coletadas >= 10)
+    await desbloquearConquista(userId, 2)
+
+  if (coletadas >= 25)
+    await desbloquearConquista(userId, 3)
+
+  if (coletadas >= 50)
+    await desbloquearConquista(userId, 4)
+
 }
