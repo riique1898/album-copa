@@ -1,36 +1,28 @@
 <template>
   <IonPage>
-
     <AppHeader
-      titulo="👤 Perfil"
+      titulo="Perfil"
       cor="primary"
     />
 
     <IonContent class="ion-padding">
-
       <IonCard class="perfil-card">
-
         <IonCardHeader>
-
           <div class="avatar">
-            👤
+            {{ iniciais }}
           </div>
 
           <IonCardTitle>
-            {{ usuario?.nome || 'Usuário' }}
+            {{ usuario?.nome || 'Usuario' }}
           </IonCardTitle>
-
         </IonCardHeader>
 
         <IonCardContent>
+          <p>{{ usuario?.email || '-' }}</p>
 
           <p>
-            📧 {{ usuario?.email || '-' }}
-          </p>
-
-          <p>
-            ⚽ Figurinhas coletadas:
-            {{ coletadas }}
+            Figurinhas coletadas:
+            {{ estatisticas.coletadas }}
           </p>
 
           <IonButton
@@ -38,7 +30,7 @@
             color="primary"
             router-link="/about"
           >
-            ℹ️ Sobre o Aplicativo
+            Sobre o Aplicativo
           </IonButton>
 
           <IonButton
@@ -46,21 +38,18 @@
             color="danger"
             @click="sair"
           >
-            🚪 Sair
+            Sair
           </IonButton>
-
         </IonCardContent>
-
       </IonCard>
-
     </IonContent>
-
   </IonPage>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { onIonViewWillEnter } from '@ionic/vue'
 
 import {
   IonPage,
@@ -77,23 +66,30 @@ import { useAlbum } from '@/composables/useAlbum'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-
-const { lista } = useAlbum()
-const { usuarioLogado, logout } = useAuth()
+const { estatisticas, carregarFigurinhas } = useAlbum()
+const { usuarioLogado, logout, getUser } = useAuth()
 
 const usuario = usuarioLogado
 
-const coletadas = computed(
-  () =>
-    lista.value.filter(
-      s => s.coletada
-    ).length
-)
+const iniciais = computed(() => {
+  const nome = usuario.value?.nome || 'Usuario'
+  return nome
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte: string) => parte[0]?.toUpperCase())
+    .join('')
+})
 
 function sair() {
   logout()
-  router.push('/login')
+  router.replace('/login')
 }
+
+onIonViewWillEnter(async () => {
+  getUser()
+  await carregarFigurinhas()
+})
 </script>
 
 <style scoped>
@@ -102,7 +98,7 @@ ion-content {
 }
 
 .perfil-card {
-  border-radius: 20px;
+  border-radius: 8px;
   text-align: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
@@ -114,14 +110,15 @@ ion-content {
   border-radius: 50%;
   background: #1976d2;
   color: white;
-  font-size: 45px;
+  font-size: 32px;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 ion-card-title {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   color: #1565c0;
   font-weight: 700;
 }

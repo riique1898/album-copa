@@ -1,6 +1,5 @@
 <template>
   <IonPage>
-
     <IonHeader>
       <IonToolbar color="success">
         <IonTitle>Login</IonTitle>
@@ -8,21 +7,18 @@
     </IonHeader>
 
     <IonContent class="ion-padding">
-
       <IonCard>
-
         <IonCardHeader>
-          <IonCardTitle>
-            Álbum da Copa
-          </IonCardTitle>
+          <IonCardTitle>Album da Copa</IonCardTitle>
         </IonCardHeader>
 
         <IonCardContent>
-
           <IonItem>
             <IonInput
               v-model="email"
               label="Email"
+              type="email"
+              label-placement="floating"
             />
           </IonItem>
 
@@ -31,11 +27,13 @@
               v-model="senha"
               type="password"
               label="Senha"
+              label-placement="floating"
             />
           </IonItem>
 
           <IonButton
             expand="block"
+            type="button"
             @click="entrar"
           >
             Entrar
@@ -56,13 +54,9 @@
           >
             Esqueci minha senha
           </IonButton>
-
         </IonCardContent>
-
       </IonCard>
-
     </IonContent>
-
   </IonPage>
 </template>
 
@@ -89,39 +83,34 @@ import { useAuth } from '@/composables/useAuth'
 
 const email = ref('')
 const senha = ref('')
-
 const router = useRouter()
-
 const { login } = useAuth()
 
 async function entrar() {
-
-  const sucesso = await login(
-    email.value,
-    senha.value
-  )
-
-  if (sucesso) {
-    router.push('/tabs/tab1')
-  } else {
-    alert('Login inválido')
+  if (!email.value.trim() || !senha.value) {
+    alert('Informe email e senha')
+    return
   }
 
+  const sucesso = await login(email.value, senha.value)
+
+  if (sucesso) {
+    router.replace('/tabs/tab1')
+    return
+  }
+
+  alert('Login invalido')
 }
 </script>
 
 <style scoped>
 ion-content {
-  --background: linear-gradient(
-    180deg,
-    #1b5e20,
-    #43a047
-  );
+  --background: linear-gradient(180deg, #1b5e20, #43a047);
 }
 
 ion-card {
   margin-top: 100px;
-  border-radius: 20px;
+  border-radius: 8px;
 }
 
 ion-card-title {

@@ -1,37 +1,28 @@
 import { ref } from 'vue'
 
 import {
+  buscarUsuarioEmail,
   cadastrarUsuario,
-  realizarLogin,
-  buscarUsuarioEmail
+  realizarLogin
 } from '@/services/database'
 
 const usuarioLogado = ref<any>(null)
 
 export function useAuth() {
-
   async function login(email: string, senha: string) {
-
     const usuarios = await realizarLogin(email, senha)
 
-    if (usuarios.length > 0) {
-
-      usuarioLogado.value = usuarios[0]
-
-      // 🔥 persistência
-      localStorage.setItem(
-        'user',
-        JSON.stringify(usuarioLogado.value)
-      )
-
-      return true
+    if (usuarios.length === 0) {
+      return false
     }
 
-    return false
+    usuarioLogado.value = usuarios[0]
+    localStorage.setItem('user', JSON.stringify(usuarioLogado.value))
+
+    return true
   }
 
   async function cadastrar(nome: string, email: string, senha: string) {
-
     const existe = await buscarUsuarioEmail(email)
 
     if (existe.length > 0) {
@@ -39,17 +30,15 @@ export function useAuth() {
     }
 
     await cadastrarUsuario(nome, email, senha)
+    await login(email, senha)
 
     return true
   }
 
   function getUser() {
-
     if (!usuarioLogado.value) {
       const saved = localStorage.getItem('user')
-      usuarioLogado.value = saved
-        ? JSON.parse(saved)
-        : null
+      usuarioLogado.value = saved ? JSON.parse(saved) : null
     }
 
     return usuarioLogado.value
@@ -59,6 +48,8 @@ export function useAuth() {
     usuarioLogado.value = null
     localStorage.removeItem('user')
   }
+
+  getUser()
 
   return {
     usuarioLogado,
