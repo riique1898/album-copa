@@ -18,6 +18,8 @@ type Sticker = {
   nome: string
   selecao: string
   foto: string
+  raridade: string
+  colecao: string
   coletada: number
 }
 

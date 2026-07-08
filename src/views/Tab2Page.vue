@@ -1,49 +1,43 @@
 <template>
   <IonPage>
-
     <AppHeader
-      titulo="⭐ Figurinhas Coletadas"
+      titulo="Figurinhas Coletadas"
       cor="warning"
     />
 
     <IonContent class="ion-padding">
-
       <IonCard>
         <IonCardContent>
-          Você possui
-          <strong>{{ coletadas.length }}</strong>
+          Voce possui
+          <strong>{{ lista.length }}</strong>
           figurinhas coletadas.
         </IonCardContent>
       </IonCard>
 
       <IonList>
-
         <IonItem
-          v-for="sticker in coletadas"
+          v-for="sticker in lista"
           :key="sticker.id"
         >
           <IonLabel>
             <h2>{{ sticker.nome }}</h2>
-            <p>{{ sticker.selecao }}</p>
+            <p>{{ sticker.selecao }} | {{ sticker.raridade }} | {{ sticker.colecao }}</p>
           </IonLabel>
         </IonItem>
-
       </IonList>
 
       <p
-        v-if="coletadas.length === 0"
+        v-if="lista.length === 0"
         class="vazio"
       >
         Nenhuma figurinha coletada.
       </p>
-
     </IonContent>
-
   </IonPage>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { onIonViewWillEnter } from '@ionic/vue'
 
 import {
   IonPage,
@@ -58,13 +52,9 @@ import {
 import AppHeader from '@/components/AppHeader.vue'
 import { useAlbum } from '@/composables/useAlbum'
 
-const { lista } = useAlbum()
+const { lista, carregarColetadas } = useAlbum()
 
-const coletadas = computed(() =>
-  lista.value.filter(
-    sticker => sticker.coletada
-  )
-)
+onIonViewWillEnter(carregarColetadas)
 </script>
 
 <style scoped>
@@ -73,14 +63,14 @@ ion-content {
 }
 
 ion-card {
-  border-radius: 18px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 16px;
 }
 
 ion-item {
   margin-bottom: 10px;
-  border-radius: 14px;
+  border-radius: 8px;
   --background: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }

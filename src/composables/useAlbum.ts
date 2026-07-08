@@ -1,79 +1,68 @@
 import { ref } from 'vue'
 
 import {
+  atualizarStatus,
+  estatisticasAlbum,
   listarFigurinhas,
-  listarColetadas,
-  listarPendentes,
-  pesquisarFigurinha,
-  atualizarStatus
+  type StickerFilter
 } from '@/services/database'
+import { useAuth } from '@/composables/useAuth'
 
 const lista = ref<any[]>([])
+const estatisticas = ref({
+  total: 0,
+  coletadas: 0,
+  pendentes: 0,
+  raras: 0,
+  brilhantes: 0,
+  percentual: 0
+})
 
 export function useAlbum() {
+  const { getUser } = useAuth()
 
-  // =========================
-  // CARREGAR TODAS
-  // =========================
-  async function carregarFigurinhas() {
-    lista.value = await listarFigurinhas()
+  function userId() {
+    return Number(getUser()?.id || 0)
   }
 
-  // =========================
-  // FILTRO: COLETADAS (SQL)
-  // =========================
+  async function carregarFigurinhas(
+    filtro: StickerFilter = 'todas',
+    texto = ''
+  ) {
+    if (!userId()) return
+
+    lista.value = await listarFigurinhas(userId(), filtro, texto)
+    estatisticas.value = await estatisticasAlbum(userId())
+  }
+
   async function carregarColetadas() {
-    lista.value = await listarColetadas()
+    await carregarFigurinhas('coletadas')
   }
 
-  // =========================
-  // FILTRO: PENDENTES (SQL)
-  // =========================
   async function carregarPendentes() {
-    lista.value = await listarPendentes()
+    await carregarFigurinhas('pendentes')
   }
 
-  // =========================
-  // BUSCA (SQL LIKE)
-  // =========================
   async function buscar(texto: string) {
-    if (!texto) {
-      await carregarFigurinhas()
-      return
-    }
-
-    lista.value = await pesquisarFigurinha(texto)
+    await carregarFigurinhas('todas', texto)
   }
 
-  // =========================
-  // TOGGLE COLETADA (UPDATE DB)
-  // =========================
   async function toggleColetada(id: number) {
-
     const item = lista.value.find(i => i.id === id)
-
-    if (!item) return
+    if (!item || !userId()) return
 
     const novoStatus = item.coletada === 1 ? 0 : 1
 
-    await atualizarStatus(id, novoStatus)
-
-    // recarrega do banco (garante persistência real)
+    await atualizarStatus(userId(), id, novoStatus)
     await carregarFigurinhas()
   }
 
-  // =========================
-  // INIT
-  // =========================
-  carregarFigurinhas()
-
   return {
     lista,
-
+    estatisticas,
     carregarFigurinhas,
     carregarColetadas,
     carregarPendentes,
-
     buscar,
     toggleColetada
   }

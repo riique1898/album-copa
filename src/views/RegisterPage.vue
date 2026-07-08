@@ -1,6 +1,5 @@
 <template>
   <IonPage>
-
     <IonHeader>
       <IonToolbar color="success">
         <IonTitle>Cadastro</IonTitle>
@@ -8,21 +7,17 @@
     </IonHeader>
 
     <IonContent class="ion-padding">
-
       <IonCard>
-
         <IonCardHeader>
-          <IonCardTitle>
-            Criar Conta
-          </IonCardTitle>
+          <IonCardTitle>Criar Conta</IonCardTitle>
         </IonCardHeader>
 
         <IonCardContent>
-
           <IonItem>
             <IonInput
               v-model="nome"
               label="Nome Completo"
+              label-placement="floating"
             />
           </IonItem>
 
@@ -30,6 +25,8 @@
             <IonInput
               v-model="email"
               label="Email"
+              type="email"
+              label-placement="floating"
             />
           </IonItem>
 
@@ -38,6 +35,7 @@
               v-model="senha"
               type="password"
               label="Senha"
+              label-placement="floating"
             />
           </IonItem>
 
@@ -46,11 +44,13 @@
               v-model="confirmarSenha"
               type="password"
               label="Confirmar Senha"
+              label-placement="floating"
             />
           </IonItem>
 
           <IonButton
             expand="block"
+            type="button"
             @click="cadastrar"
           >
             Cadastrar
@@ -63,13 +63,9 @@
           >
             Voltar ao Login
           </IonButton>
-
         </IonCardContent>
-
       </IonCard>
-
     </IonContent>
-
   </IonPage>
 </template>
 
@@ -99,16 +95,10 @@ const senha = ref('')
 const confirmarSenha = ref('')
 
 const router = useRouter()
-
 const { cadastrar: cadastrarUsuario } = useAuth()
 
 async function cadastrar() {
-
-  if (
-    !nome.value ||
-    !email.value ||
-    !senha.value
-  ) {
+  if (!nome.value.trim() || !email.value.trim() || !senha.value) {
     alert('Preencha todos os campos')
     return
   }
@@ -119,24 +109,27 @@ async function cadastrar() {
   }
 
   if (senha.value !== confirmarSenha.value) {
-    alert('As senhas não coincidem')
+    alert('As senhas nao coincidem')
     return
   }
 
-  const sucesso = await cadastrarUsuario(
-    nome.value,
-    email.value,
-    senha.value
-  )
+  try {
+    const sucesso = await cadastrarUsuario(
+      nome.value,
+      email.value,
+      senha.value
+    )
 
-  if (!sucesso) {
-    alert('Email já cadastrado')
-    return
+    if (!sucesso) {
+      alert('Email ja cadastrado')
+      return
+    }
+
+    router.replace('/tabs/tab1')
+  } catch (erro) {
+    console.error('Erro no cadastro:', erro)
+    alert('Nao foi possivel cadastrar. Tente novamente.')
   }
-
-  alert('Cadastro realizado com sucesso!')
-
-  router.push('/login')
 }
 </script>
 
@@ -146,7 +139,7 @@ ion-content {
 }
 
 ion-card {
-  border-radius: 20px;
+  border-radius: 8px;
   margin-top: 40px;
 }
 

@@ -21,6 +21,11 @@
           <IonLabel>Perfil</IonLabel>
         </IonTabButton>
 
+        <IonTabButton tab="conquistas" href="/tabs/tab4">
+          <IonIcon :icon="trophyOutline" />
+          <IonLabel>Conquistas</IonLabel>
+        </IonTabButton>
+
       </IonTabBar>
 
     </IonTabs>
@@ -40,6 +45,7 @@ import {
 
 import {
   albumsOutline,
+  trophyOutline,
   starOutline,
   personOutline
 } from 'ionicons/icons'
