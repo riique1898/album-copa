@@ -1,9 +1,12 @@
 import { ref } from 'vue'
 
 import {
+  atualizarFavorito,
   atualizarStatus,
   estatisticasAlbum,
   listarFigurinhas,
+  rankingColecionador,
+  ultimasColetadas,
   type StickerFilter
 } from '@/services/database'
 import { useAuth } from '@/composables/useAuth'
@@ -17,6 +20,13 @@ const estatisticas = ref({
   brilhantes: 0,
   percentual: 0
 })
+const ranking = ref({
+  pontuacao: 0,
+  nivel: 'Bronze',
+  pontosProximoNivel: 101 as number | null,
+  progressoProximoNivel: 0
+})
+const ultimas = ref<any[]>([])
 
 export function useAlbum() {
   const { getUser } = useAuth()
@@ -27,16 +37,19 @@ export function useAlbum() {
 
   async function carregarFigurinhas(
     filtro: StickerFilter = 'todas',
-    texto = ''
+    texto = '',
+    ordemColeta: 'asc' | 'desc' | null = null
   ) {
     if (!userId()) return
 
-    lista.value = await listarFigurinhas(userId(), filtro, texto)
+    lista.value = await listarFigurinhas(userId(), filtro, texto, ordemColeta)
     estatisticas.value = await estatisticasAlbum(userId())
+    ranking.value = await rankingColecionador(userId())
+    ultimas.value = await ultimasColetadas(userId())
   }
 
-  async function carregarColetadas() {
-    await carregarFigurinhas('coletadas')
+  async function carregarColetadas(ordem: 'asc' | 'desc' = 'desc') {
+    await carregarFigurinhas('coletadas', '', ordem)
   }
 
   async function carregarPendentes() {
@@ -45,6 +58,16 @@ export function useAlbum() {
 
   async function buscar(texto: string) {
     await carregarFigurinhas('todas', texto)
+  }
+
+  async function carregarFavoritas() {
+    await carregarFigurinhas('favoritas')
+  }
+
+  async function carregarUltimasColetadas() {
+    if (!userId()) return
+
+    ultimas.value = await ultimasColetadas(userId())
   }
 
   async function toggleColetada(id: number) {
@@ -57,13 +80,28 @@ export function useAlbum() {
     await carregarFigurinhas()
   }
 
+  async function toggleFavorita(id: number) {
+    const item = lista.value.find(i => i.id === id)
+    if (!item || !userId()) return
+
+    const novoStatus = item.favorite === 1 ? 0 : 1
+
+    await atualizarFavorito(userId(), id, novoStatus)
+    await carregarFigurinhas()
+  }
+
   return {
     lista,
     estatisticas,
+    ranking,
+    ultimas,
     carregarFigurinhas,
     carregarColetadas,
     carregarPendentes,
+    carregarFavoritas,
+    carregarUltimasColetadas,
     buscar,
-    toggleColetada
+    toggleColetada,
+    toggleFavorita
   }
 }

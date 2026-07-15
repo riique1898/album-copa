@@ -11,8 +11,9 @@ const isWeb = Capacitor.getPlatform() === 'web'
 const webStoreKey = 'album-copa-web-db'
 
 let db: SQLiteDBConnection | null = null
+let initialized = false
 
-export type StickerFilter = 'todas' | 'coletadas' | 'pendentes'
+export type StickerFilter = 'todas' | 'coletadas' | 'pendentes' | 'favoritas'
 
 type WebStore = {
   usuarios: any[]
@@ -75,7 +76,9 @@ function criarFigurinhasPadrao() {
       foto: `https://placehold.co/480x640/0b7a3b/ffffff?text=${encodeURIComponent(jogador)}`,
       raridade: index % 10 === 0 ? 'Brilhante' : index % 4 === 0 ? 'Rara' : 'Comum',
       colecao: index < 20 ? 'Fase de Grupos' : index < 40 ? 'Mata-Mata' : 'Lendas',
-      coletada: 0
+      coletada: 0,
+      favorite: 0,
+      collected_at: null
     }
   })
 }
@@ -97,7 +100,20 @@ function carregarWebStore(): WebStore {
   const saved = localStorage.getItem(webStoreKey)
 
   if (saved) {
-    return JSON.parse(saved)
+    const store = JSON.parse(saved)
+    store.figurinhas = (store.figurinhas || criarFigurinhasPadrao()).map((figurinha: any) => ({
+      ...figurinha,
+      favorite: figurinha.favorite || 0,
+      collected_at: figurinha.collected_at || null
+    }))
+    store.userStickers = (store.userStickers || []).map((item: any) => ({
+      ...item,
+      favorite: item.favorite || 0
+    }))
+    store.achievements = store.achievements || criarConquistasPadrao()
+    store.userAchievements = store.userAchievements || []
+    salvarWebStore(store)
+    return store
   }
 
   const store: WebStore = {
@@ -128,7 +144,8 @@ function garantirColecaoUsuarioWeb(store: WebStore, userId: number) {
         user_id: userId,
         sticker_id: figurinha.id,
         coletada: figurinha.coletada || 0,
-        data_coleta: null
+        data_coleta: figurinha.collected_at || null,
+        favorite: figurinha.favorite || 0
       })
     }
   }
@@ -137,15 +154,39 @@ function garantirColecaoUsuarioWeb(store: WebStore, userId: number) {
 async function getDb() {
   if (db) return db
 
-  db = await sqlite.createConnection(
-    dbName,
-    false,
-    'no-encryption',
-    1,
-    false
-  )
+  const hasConnection = await sqlite.isConnection(dbName, false)
 
-  await db.open()
+  if (hasConnection.result) {
+    db = await sqlite.retrieveConnection(dbName, false)
+  } else {
+    try {
+      db = await sqlite.createConnection(
+        dbName,
+        false,
+        'no-encryption',
+        1,
+        false
+      )
+    } catch {
+      await sqlite.closeConnection(dbName, false).catch(() => undefined)
+      db = await sqlite.createConnection(
+        dbName,
+        false,
+        'no-encryption',
+        1,
+        false
+      )
+    }
+  }
+
+  const isOpen = await db.isDBOpen().catch(() => ({ result: false }))
+
+  if (!isOpen.result) {
+    await db.open()
+  }
+
+  await db.execute('PRAGMA foreign_keys = ON;')
+
   return db
 }
 
@@ -164,8 +205,11 @@ async function addColumnIfMissing(
 }
 
 export async function initDatabase() {
+  if (initialized) return
+
   if (isWeb) {
     carregarWebStore()
+    initialized = true
     return
   }
 
@@ -188,13 +232,17 @@ export async function initDatabase() {
       foto TEXT NOT NULL,
       raridade TEXT NOT NULL DEFAULT 'Comum',
       colecao TEXT NOT NULL DEFAULT 'Base',
-      coletada INTEGER NOT NULL DEFAULT 0
+      coletada INTEGER NOT NULL DEFAULT 0,
+      favorite INTEGER NOT NULL DEFAULT 0,
+      collected_at DATETIME
     );
   `)
 
   await addColumnIfMissing('figurinha', 'raridade', "TEXT NOT NULL DEFAULT 'Comum'")
   await addColumnIfMissing('figurinha', 'colecao', "TEXT NOT NULL DEFAULT 'Base'")
   await addColumnIfMissing('figurinha', 'coletada', 'INTEGER NOT NULL DEFAULT 0')
+  await addColumnIfMissing('figurinha', 'favorite', 'INTEGER NOT NULL DEFAULT 0')
+  await addColumnIfMissing('figurinha', 'collected_at', 'DATETIME')
 
   await database.execute(`
     CREATE TABLE IF NOT EXISTS user_stickers (
@@ -203,11 +251,14 @@ export async function initDatabase() {
       sticker_id INTEGER NOT NULL,
       coletada INTEGER NOT NULL DEFAULT 0,
       data_coleta TEXT,
+      favorite INTEGER NOT NULL DEFAULT 0,
       UNIQUE(user_id, sticker_id),
       FOREIGN KEY(user_id) REFERENCES usuario(id),
       FOREIGN KEY(sticker_id) REFERENCES figurinha(id)
     );
   `)
+
+  await addColumnIfMissing('user_stickers', 'favorite', 'INTEGER NOT NULL DEFAULT 0')
 
   await database.execute(`
     CREATE TABLE IF NOT EXISTS achievements (
@@ -236,9 +287,13 @@ export async function initDatabase() {
 
   await popularFigurinhas()
   await popularConquistas()
+
+  initialized = true
 }
 
 export async function cadastrarUsuario(nome: string, email: string, senha: string) {
+  await initDatabase()
+
   if (isWeb) {
     const store = carregarWebStore()
     const normalizedEmail = email.trim().toLowerCase()
@@ -270,6 +325,8 @@ export async function cadastrarUsuario(nome: string, email: string, senha: strin
 }
 
 export async function realizarLogin(email: string, senha: string) {
+  await initDatabase()
+
   if (isWeb) {
     const store = carregarWebStore()
     const normalizedEmail = email.trim().toLowerCase()
@@ -289,6 +346,8 @@ export async function realizarLogin(email: string, senha: string) {
 }
 
 export async function buscarUsuarioEmail(email: string) {
+  await initDatabase()
+
   if (isWeb) {
     const store = carregarWebStore()
     const normalizedEmail = email.trim().toLowerCase()
@@ -321,8 +380,11 @@ async function garantirColecaoUsuario(userId: number) {
 export async function listarFigurinhas(
   userId: number,
   filtro: StickerFilter = 'todas',
-  texto = ''
+  texto = '',
+  ordemColeta: 'asc' | 'desc' | null = null
 ) {
+  await initDatabase()
+
   if (isWeb) {
     const store = carregarWebStore()
     garantirColecaoUsuarioWeb(store, userId)
@@ -339,12 +401,15 @@ export async function listarFigurinhas(
         return {
           ...figurinha,
           coletada: userSticker?.coletada || 0,
-          data_coleta: userSticker?.data_coleta || null
+          data_coleta: userSticker?.data_coleta || null,
+          collected_at: userSticker?.data_coleta || null,
+          favorite: userSticker?.favorite || 0
         }
       })
       .filter(figurinha => {
         if (filtro === 'coletadas' && figurinha.coletada !== 1) return false
         if (filtro === 'pendentes' && figurinha.coletada !== 0) return false
+        if (filtro === 'favoritas' && figurinha.favorite !== 1) return false
         if (!busca) return true
 
         return [
@@ -353,7 +418,18 @@ export async function listarFigurinhas(
           figurinha.colecao
         ].some(campo => campo.toLowerCase().includes(busca))
       })
-      .sort((a, b) => `${a.colecao}${a.selecao}${a.nome}`.localeCompare(`${b.colecao}${b.selecao}${b.nome}`))
+      .sort((a, b) => {
+        if (ordemColeta) {
+          const dataA = a.data_coleta || ''
+          const dataB = b.data_coleta || ''
+          return ordemColeta === 'asc'
+            ? dataA.localeCompare(dataB)
+            : dataB.localeCompare(dataA)
+        }
+
+        return `${a.colecao}${a.selecao}${a.nome}`
+          .localeCompare(`${b.colecao}${b.selecao}${b.nome}`)
+      })
   }
 
   const database = await getDb()
@@ -364,11 +440,16 @@ export async function listarFigurinhas(
 
   if (filtro === 'coletadas') where.push('us.coletada = 1')
   if (filtro === 'pendentes') where.push('us.coletada = 0')
+  if (filtro === 'favoritas') where.push('us.favorite = 1')
 
   if (texto.trim()) {
     where.push('(f.nome LIKE ? OR f.selecao LIKE ? OR f.colecao LIKE ?)')
     params.push(`%${texto.trim()}%`, `%${texto.trim()}%`, `%${texto.trim()}%`)
   }
+
+  const orderBy = ordemColeta
+    ? `us.data_coleta ${ordemColeta.toUpperCase()}, f.nome`
+    : 'f.colecao, f.selecao, f.nome'
 
   const res = await database.query(
     `
@@ -380,13 +461,15 @@ export async function listarFigurinhas(
       f.raridade,
       f.colecao,
       us.coletada,
-      us.data_coleta
+      us.data_coleta,
+      us.data_coleta AS collected_at,
+      us.favorite
     FROM figurinha f
     INNER JOIN user_stickers us
       ON us.sticker_id = f.id
       AND us.user_id = ?
     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-    ORDER BY f.colecao, f.selecao, f.nome
+    ORDER BY ${orderBy}
     `,
     params
   )
@@ -395,6 +478,8 @@ export async function listarFigurinhas(
 }
 
 export async function estatisticasAlbum(userId: number) {
+  await initDatabase()
+
   if (isWeb) {
     const figurinhas = await listarFigurinhas(userId)
     const coletadas = figurinhas.filter(figurinha => figurinha.coletada === 1)
@@ -442,18 +527,144 @@ export async function estatisticasAlbum(userId: number) {
   }
 }
 
+export async function rankingColecionador(userId: number) {
+  await initDatabase()
+
+  if (isWeb) {
+    const figurinhas = await listarFigurinhas(userId, 'coletadas')
+    const pontuacao = figurinhas.reduce((total, figurinha) => {
+      if (figurinha.raridade === 'Brilhante') return total + 10
+      if (figurinha.raridade === 'Rara') return total + 5
+      return total + 1
+    }, 0)
+    const niveis = [
+      { nome: 'Bronze', minimo: 0, proximo: 101 },
+      { nome: 'Prata', minimo: 101, proximo: 251 },
+      { nome: 'Ouro', minimo: 251, proximo: 501 },
+      { nome: 'Diamante', minimo: 501, proximo: null }
+    ]
+    const nivel = [...niveis]
+      .reverse()
+      .find(item => pontuacao >= item.minimo) || niveis[0]
+    const pontosProximoNivel = nivel.proximo
+    const progressoProximoNivel = pontosProximoNivel
+      ? Math.min(1, (pontuacao - nivel.minimo) / (pontosProximoNivel - nivel.minimo))
+      : 1
+
+    return {
+      pontuacao,
+      nivel: nivel.nome,
+      pontosProximoNivel,
+      progressoProximoNivel
+    }
+  }
+
+  const database = await getDb()
+  await garantirColecaoUsuario(userId)
+
+  const res = await database.query(
+    `
+    SELECT
+      SUM(
+        CASE
+          WHEN us.coletada = 1 AND f.raridade = 'Brilhante' THEN 10
+          WHEN us.coletada = 1 AND f.raridade = 'Rara' THEN 5
+          WHEN us.coletada = 1 THEN 1
+          ELSE 0
+        END
+      ) AS pontuacao
+    FROM figurinha f
+    INNER JOIN user_stickers us
+      ON us.sticker_id = f.id
+      AND us.user_id = ?
+    `,
+    [userId]
+  )
+
+  const pontuacao = Number(res.values?.[0]?.pontuacao || 0)
+  const niveis = [
+    { nome: 'Bronze', minimo: 0, proximo: 101 },
+    { nome: 'Prata', minimo: 101, proximo: 251 },
+    { nome: 'Ouro', minimo: 251, proximo: 501 },
+    { nome: 'Diamante', minimo: 501, proximo: null }
+  ]
+  const nivel = [...niveis]
+    .reverse()
+    .find(item => pontuacao >= item.minimo) || niveis[0]
+  const pontosProximoNivel = nivel.proximo
+  const progressoProximoNivel = pontosProximoNivel
+    ? Math.min(1, (pontuacao - nivel.minimo) / (pontosProximoNivel - nivel.minimo))
+    : 1
+
+  return {
+    pontuacao,
+    nivel: nivel.nome,
+    pontosProximoNivel,
+    progressoProximoNivel
+  }
+}
+
+export async function ultimasColetadas(userId: number, limite = 10) {
+  await initDatabase()
+
+  if (isWeb) {
+    return (await listarFigurinhas(userId, 'coletadas', '', 'desc'))
+      .filter(figurinha => figurinha.data_coleta)
+      .slice(0, limite)
+  }
+
+  const database = await getDb()
+  await garantirColecaoUsuario(userId)
+
+  const res = await database.query(
+    `
+    SELECT
+      f.id,
+      f.nome,
+      f.selecao,
+      f.foto,
+      f.raridade,
+      f.colecao,
+      us.coletada,
+      us.data_coleta,
+      us.data_coleta AS collected_at,
+      us.favorite
+    FROM figurinha f
+    INNER JOIN user_stickers us
+      ON us.sticker_id = f.id
+      AND us.user_id = ?
+    WHERE us.coletada = 1
+    AND us.data_coleta IS NOT NULL
+    ORDER BY us.data_coleta DESC
+    LIMIT ?
+    `,
+    [userId, limite]
+  )
+
+  return res.values || []
+}
+
 export async function atualizarStatus(userId: number, stickerId: number, coletada: number) {
+  await initDatabase()
+
   if (isWeb) {
     const store = carregarWebStore()
     garantirColecaoUsuarioWeb(store, userId)
+    const dataColeta = coletada === 1 ? new Date().toISOString() : null
 
     const userSticker = store.userStickers.find(
       item => item.user_id === userId && item.sticker_id === stickerId
     )
+    const figurinha = store.figurinhas.find(item => item.id === stickerId)
 
     if (userSticker) {
       userSticker.coletada = coletada
-      userSticker.data_coleta = coletada === 1 ? new Date().toISOString() : null
+      userSticker.data_coleta = dataColeta
+    }
+
+    if (figurinha) {
+      figurinha.coletada = coletada
+      figurinha.collected_at = dataColeta
     }
 
     salvarWebStore(store)
@@ -464,25 +675,84 @@ export async function atualizarStatus(userId: number, stickerId: number, coletad
   const database = await getDb()
   await garantirColecaoUsuario(userId)
 
+  const dataColeta = coletada === 1 ? new Date().toISOString() : null
+
   await database.run(
     `
     UPDATE user_stickers
     SET coletada = ?,
-        data_coleta = CASE WHEN ? = 1 THEN ? ELSE NULL END
+        data_coleta = ?
     WHERE user_id = ?
     AND sticker_id = ?
     `,
-    [coletada, coletada, new Date().toISOString(), userId, stickerId]
+    [coletada, dataColeta, userId, stickerId]
+  )
+
+  await database.run(
+    `
+    UPDATE figurinha
+    SET coletada = ?,
+        collected_at = ?
+    WHERE id = ?
+    `,
+    [coletada, dataColeta, stickerId]
   )
 
   await verificarConquistas(userId)
+}
+
+export async function atualizarFavorito(userId: number, stickerId: number, favorite: number) {
+  await initDatabase()
+
+  if (isWeb) {
+    const store = carregarWebStore()
+    garantirColecaoUsuarioWeb(store, userId)
+
+    const userSticker = store.userStickers.find(
+      item => item.user_id === userId && item.sticker_id === stickerId
+    )
+    const figurinha = store.figurinhas.find(item => item.id === stickerId)
+
+    if (userSticker) {
+      userSticker.favorite = favorite
+    }
+
+    if (figurinha) {
+      figurinha.favorite = favorite
+    }
+
+    salvarWebStore(store)
+    return
+  }
+
+  const database = await getDb()
+  await garantirColecaoUsuario(userId)
+
+  await database.run(
+    `
+    UPDATE user_stickers
+    SET favorite = ?
+    WHERE user_id = ?
+    AND sticker_id = ?
+    `,
+    [favorite, userId, stickerId]
+  )
+
+  await database.run(
+    `
+    UPDATE figurinha
+    SET favorite = ?
+    WHERE id = ?
+    `,
+    [favorite, stickerId]
+  )
 }
 
 export async function popularFigurinhas() {
   if (isWeb) return
 
   const database = await getDb()
-  const res = await database.query(`SELECT COUNT(*) as total FROM figurinha`)
+  const res = await database.query(`SELECT COUNT(*) AS total FROM figurinha`)
   const total = Number(res.values?.[0]?.total || 0)
 
   if (total > 0) return
@@ -553,6 +823,8 @@ export async function popularConquistas() {
 }
 
 export async function listarConquistas(userId: number) {
+  await initDatabase()
+
   if (isWeb) {
     await verificarConquistas(userId)
 

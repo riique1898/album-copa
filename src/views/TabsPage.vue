@@ -26,6 +26,11 @@
           <IonLabel>Conquistas</IonLabel>
         </IonTabButton>
 
+        <IonTabButton tab="estatisticas" href="/tabs/stats">
+          <IonIcon :icon="statsChartOutline" />
+          <IonLabel>Estatisticas</IonLabel>
+        </IonTabButton>
+
       </IonTabBar>
 
     </IonTabs>
@@ -45,6 +50,7 @@ import {
 
 import {
   albumsOutline,
+  statsChartOutline,
   trophyOutline,
   starOutline,
   personOutline

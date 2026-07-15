@@ -92,14 +92,19 @@ async function entrar() {
     return
   }
 
-  const sucesso = await login(email.value, senha.value)
+  try {
+    const sucesso = await login(email.value, senha.value)
 
-  if (sucesso) {
-    router.replace('/tabs/tab1')
-    return
+    if (sucesso) {
+      router.replace('/tabs/tab1')
+      return
+    }
+
+    alert('Login invalido')
+  } catch (erro) {
+    console.error('Erro no login:', erro)
+    alert('Nao foi possivel entrar. Verifique o SQLite no Logcat.')
   }
-
-  alert('Login invalido')
 }
 </script>
 

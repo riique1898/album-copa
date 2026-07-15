@@ -21,7 +21,9 @@ import './theme/variables.css'
 
 async function startApp() {
 
-  await initDatabase()
+  await initDatabase().catch(error => {
+    console.error('Erro ao iniciar SQLite:', error)
+  })
 
   const app = createApp(App)
     .use(IonicVue)
