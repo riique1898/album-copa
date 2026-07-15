@@ -39,11 +39,16 @@
         <IonSegmentButton value="pendentes">
           <IonLabel>Pendentes</IonLabel>
         </IonSegmentButton>
+
+        <IonSegmentButton value="favoritas">
+          <IonLabel>Favoritas</IonLabel>
+        </IonSegmentButton>
       </IonSegment>
 
       <StickerList
         :stickers="lista"
         @toggle="alterarStatus"
+        @favorite="alterarFavorito"
       />
     </IonContent>
   </IonPage>
@@ -71,9 +76,11 @@ const {
   lista,
   estatisticas,
   toggleColetada,
+  toggleFavorita,
   carregarFigurinhas,
   carregarColetadas,
   carregarPendentes,
+  carregarFavoritas,
   buscar
 } = useAlbum()
 
@@ -96,11 +103,21 @@ async function atualizarLista() {
     return
   }
 
+  if (filtro.value === 'favoritas') {
+    await carregarFavoritas()
+    return
+  }
+
   await carregarFigurinhas()
 }
 
 async function alterarStatus(id: number) {
   await toggleColetada(id)
+  await atualizarLista()
+}
+
+async function alterarFavorito(id: number) {
+  await toggleFavorita(id)
   await atualizarLista()
 }
 

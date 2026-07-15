@@ -14,6 +14,16 @@
         </IonCardContent>
       </IonCard>
 
+      <IonSegment v-model="ordem">
+        <IonSegmentButton value="desc">
+          <IonLabel>Mais recentes</IonLabel>
+        </IonSegmentButton>
+
+        <IonSegmentButton value="asc">
+          <IonLabel>Mais antigas</IonLabel>
+        </IonSegmentButton>
+      </IonSegment>
+
       <IonList>
         <IonItem
           v-for="sticker in lista"
@@ -22,6 +32,7 @@
           <IonLabel>
             <h2>{{ sticker.nome }}</h2>
             <p>{{ sticker.selecao }} | {{ sticker.raridade }} | {{ sticker.colecao }}</p>
+            <p>Coletada em {{ formatarData(sticker.data_coleta) }}</p>
           </IonLabel>
         </IonItem>
       </IonList>
@@ -37,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { onIonViewWillEnter } from '@ionic/vue'
 
 import {
@@ -46,15 +58,29 @@ import {
   IonCardContent,
   IonList,
   IonItem,
-  IonLabel
+  IonLabel,
+  IonSegment,
+  IonSegmentButton
 } from '@ionic/vue'
 
 import AppHeader from '@/components/AppHeader.vue'
 import { useAlbum } from '@/composables/useAlbum'
 
 const { lista, carregarColetadas } = useAlbum()
+const ordem = ref<'asc' | 'desc'>('desc')
 
-onIonViewWillEnter(carregarColetadas)
+function formatarData(data?: string) {
+  if (!data) return '-'
+
+  return new Date(data).toLocaleString('pt-BR')
+}
+
+async function carregar() {
+  await carregarColetadas(ordem.value)
+}
+
+watch(ordem, carregar)
+onIonViewWillEnter(carregar)
 </script>
 
 <style scoped>
@@ -66,6 +92,13 @@ ion-card {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 16px;
+}
+
+ion-segment {
+  margin-bottom: 16px;
+  background: white;
+  border-radius: 8px;
+  padding: 4px;
 }
 
 ion-item {

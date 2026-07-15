@@ -12,6 +12,18 @@
     </div>
 
     <IonCardHeader>
+      <IonButton
+        class="favorite-button"
+        fill="clear"
+        :color="sticker.favorite ? 'warning' : 'medium'"
+        @click="$emit('favorite')"
+      >
+        <IonIcon
+          slot="icon-only"
+          :icon="sticker.favorite ? star : starOutline"
+        />
+      </IonButton>
+
       <IonCardTitle>
         {{ sticker.nome }}
       </IonCardTitle>
@@ -29,6 +41,20 @@
       <IonChip :color="sticker.coletada ? 'success' : 'danger'">
         {{ sticker.coletada ? 'Coletada' : 'Pendente' }}
       </IonChip>
+
+      <IonChip
+        v-if="sticker.favorite"
+        color="warning"
+      >
+        Favorita
+      </IonChip>
+
+      <p
+        v-if="sticker.coletada && sticker.data_coleta"
+        class="collection-date"
+      >
+        Coletada em {{ formatarData(sticker.data_coleta) }}
+      </p>
 
       <IonButton
         expand="block"
@@ -50,8 +76,13 @@ import {
   IonCardTitle,
   IonCardContent,
   IonChip,
-  IonButton
+  IonButton,
+  IonIcon
 } from '@ionic/vue'
+import {
+  star,
+  starOutline
+} from 'ionicons/icons'
 
 const props = defineProps({
   sticker: {
@@ -60,7 +91,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['toggle'])
+defineEmits(['toggle', 'favorite'])
 
 const corRaridade = computed(() => {
   switch (props.sticker.raridade) {
@@ -72,6 +103,10 @@ const corRaridade = computed(() => {
       return 'medium'
   }
 })
+
+function formatarData(data: string) {
+  return new Date(data).toLocaleString('pt-BR')
+}
 </script>
 
 <style scoped>
@@ -101,7 +136,16 @@ const corRaridade = computed(() => {
 }
 
 ion-card-header {
+  position: relative;
   text-align: center;
+}
+
+.favorite-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 44px;
+  height: 44px;
 }
 
 ion-card-title {
@@ -120,5 +164,11 @@ ion-card-content {
 
 ion-chip {
   margin: 6px;
+}
+
+.collection-date {
+  color: #666;
+  margin: 8px 0 12px;
+  font-size: 0.92rem;
 }
 </style>

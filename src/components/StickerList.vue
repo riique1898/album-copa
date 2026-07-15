@@ -5,6 +5,7 @@
       :key="sticker.id"
       :sticker="sticker"
       @toggle="$emit('toggle', sticker.id)"
+      @favorite="$emit('favorite', sticker.id)"
     />
   </div>
 </template>
@@ -21,6 +22,9 @@ type Sticker = {
   raridade: string
   colecao: string
   coletada: number
+  data_coleta?: string
+  collected_at?: string
+  favorite: number
 }
 
 defineProps<{
@@ -29,6 +33,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'toggle', id: number): void
+  (e: 'favorite', id: number): void
 }>()
 
 </script>
