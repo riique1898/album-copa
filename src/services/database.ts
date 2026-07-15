@@ -3,14 +3,25 @@ import {
   SQLiteConnection,
   SQLiteDBConnection
 } from '@capacitor-community/sqlite'
+import { Capacitor } from '@capacitor/core'
 
 const sqlite = new SQLiteConnection(CapacitorSQLite)
 const dbName = 'appdata'
+const isWeb = Capacitor.getPlatform() === 'web'
+const webStoreKey = 'album-copa-web-db'
 
 let db: SQLiteDBConnection | null = null
 let initialized = false
 
 export type StickerFilter = 'todas' | 'coletadas' | 'pendentes' | 'favoritas'
+
+type WebStore = {
+  usuarios: any[]
+  figurinhas: any[]
+  achievements: any[]
+  userStickers: any[]
+  userAchievements: any[]
+}
 
 const conquistasPadrao = [
   ['primeira_figurinha', 'Primeira Figurinha', 'Desbloquear ao coletar a primeira figurinha.', 'medal-outline', 'total', 1, null],
@@ -27,6 +38,118 @@ const conquistasPadrao = [
   ['mata_mata', 'Mata-Mata Completo', 'Completar a colecao Mata-Mata.', 'shield-checkmark-outline', 'colecao', 100, 'Mata-Mata'],
   ['lendas', 'Lendas Completas', 'Completar a colecao Lendas.', 'sparkles-outline', 'colecao', 100, 'Lendas']
 ]
+
+function criarFigurinhasPadrao() {
+  const selecoes = [
+    'Brasil',
+    'Argentina',
+    'Franca',
+    'Portugal',
+    'Espanha',
+    'Alemanha',
+    'Inglaterra',
+    'Uruguai',
+    'Japao',
+    'Marrocos'
+  ]
+
+  const jogadores = [
+    'Neymar Jr',
+    'Vinicius Jr',
+    'Messi',
+    'Mbappe',
+    'Cristiano Ronaldo',
+    'Bellingham',
+    'Musiala',
+    'Pedri',
+    'Valverde',
+    'Hakimi'
+  ]
+
+  return Array.from({ length: 60 }, (_, index) => {
+    const jogador = jogadores[index % jogadores.length]
+
+    return {
+      id: index + 1,
+      nome: `${jogador} ${Math.floor(index / jogadores.length) + 1}`,
+      selecao: selecoes[index % selecoes.length],
+      foto: `https://placehold.co/480x640/0b7a3b/ffffff?text=${encodeURIComponent(jogador)}`,
+      raridade: index % 10 === 0 ? 'Brilhante' : index % 4 === 0 ? 'Rara' : 'Comum',
+      colecao: index < 20 ? 'Fase de Grupos' : index < 40 ? 'Mata-Mata' : 'Lendas',
+      coletada: 0,
+      favorite: 0,
+      collected_at: null
+    }
+  })
+}
+
+function criarConquistasPadrao() {
+  return conquistasPadrao.map((item, index) => ({
+    id: index + 1,
+    chave: item[0],
+    nome: item[1],
+    descricao: item[2],
+    icone: item[3],
+    tipo: item[4],
+    alvo: item[5],
+    colecao: item[6]
+  }))
+}
+
+function carregarWebStore(): WebStore {
+  const saved = localStorage.getItem(webStoreKey)
+
+  if (saved) {
+    const store = JSON.parse(saved)
+    store.figurinhas = (store.figurinhas || criarFigurinhasPadrao()).map((figurinha: any) => ({
+      ...figurinha,
+      favorite: figurinha.favorite || 0,
+      collected_at: figurinha.collected_at || null
+    }))
+    store.userStickers = (store.userStickers || []).map((item: any) => ({
+      ...item,
+      favorite: item.favorite || 0
+    }))
+    store.achievements = store.achievements || criarConquistasPadrao()
+    store.userAchievements = store.userAchievements || []
+    salvarWebStore(store)
+    return store
+  }
+
+  const store: WebStore = {
+    usuarios: [],
+    figurinhas: criarFigurinhasPadrao(),
+    achievements: criarConquistasPadrao(),
+    userStickers: [],
+    userAchievements: []
+  }
+
+  salvarWebStore(store)
+  return store
+}
+
+function salvarWebStore(store: WebStore) {
+  localStorage.setItem(webStoreKey, JSON.stringify(store))
+}
+
+function garantirColecaoUsuarioWeb(store: WebStore, userId: number) {
+  for (const figurinha of store.figurinhas) {
+    const existe = store.userStickers.some(
+      item => item.user_id === userId && item.sticker_id === figurinha.id
+    )
+
+    if (!existe) {
+      store.userStickers.push({
+        id: store.userStickers.length + 1,
+        user_id: userId,
+        sticker_id: figurinha.id,
+        coletada: figurinha.coletada || 0,
+        data_coleta: figurinha.collected_at || null,
+        favorite: figurinha.favorite || 0
+      })
+    }
+  }
+}
 
 async function getDb() {
   if (db) return db
@@ -83,6 +206,12 @@ async function addColumnIfMissing(
 
 export async function initDatabase() {
   if (initialized) return
+
+  if (isWeb) {
+    carregarWebStore()
+    initialized = true
+    return
+  }
 
   const database = await getDb()
 
@@ -164,6 +293,29 @@ export async function initDatabase() {
 
 export async function cadastrarUsuario(nome: string, email: string, senha: string) {
   await initDatabase()
+
+  if (isWeb) {
+    const store = carregarWebStore()
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (store.usuarios.some(usuario => usuario.email === normalizedEmail)) {
+      throw new Error('Email ja cadastrado')
+    }
+
+    const usuario = {
+      id: store.usuarios.length + 1,
+      nome: nome.trim(),
+      email: normalizedEmail,
+      senha
+    }
+
+    store.usuarios.push(usuario)
+    garantirColecaoUsuarioWeb(store, usuario.id)
+    salvarWebStore(store)
+
+    return { changes: { changes: 1 } }
+  }
+
   const database = await getDb()
 
   return database.run(
@@ -174,6 +326,16 @@ export async function cadastrarUsuario(nome: string, email: string, senha: strin
 
 export async function realizarLogin(email: string, senha: string) {
   await initDatabase()
+
+  if (isWeb) {
+    const store = carregarWebStore()
+    const normalizedEmail = email.trim().toLowerCase()
+
+    return store.usuarios.filter(
+      usuario => usuario.email === normalizedEmail && usuario.senha === senha
+    )
+  }
+
   const database = await getDb()
   const res = await database.query(
     `SELECT * FROM usuario WHERE email = ? AND senha = ?`,
@@ -185,6 +347,14 @@ export async function realizarLogin(email: string, senha: string) {
 
 export async function buscarUsuarioEmail(email: string) {
   await initDatabase()
+
+  if (isWeb) {
+    const store = carregarWebStore()
+    const normalizedEmail = email.trim().toLowerCase()
+
+    return store.usuarios.filter(usuario => usuario.email === normalizedEmail)
+  }
+
   const database = await getDb()
   const res = await database.query(
     `SELECT * FROM usuario WHERE email = ?`,
@@ -214,6 +384,54 @@ export async function listarFigurinhas(
   ordemColeta: 'asc' | 'desc' | null = null
 ) {
   await initDatabase()
+
+  if (isWeb) {
+    const store = carregarWebStore()
+    garantirColecaoUsuarioWeb(store, userId)
+    salvarWebStore(store)
+
+    const busca = texto.trim().toLowerCase()
+
+    return store.figurinhas
+      .map(figurinha => {
+        const userSticker = store.userStickers.find(
+          item => item.user_id === userId && item.sticker_id === figurinha.id
+        )
+
+        return {
+          ...figurinha,
+          coletada: userSticker?.coletada || 0,
+          data_coleta: userSticker?.data_coleta || null,
+          collected_at: userSticker?.data_coleta || null,
+          favorite: userSticker?.favorite || 0
+        }
+      })
+      .filter(figurinha => {
+        if (filtro === 'coletadas' && figurinha.coletada !== 1) return false
+        if (filtro === 'pendentes' && figurinha.coletada !== 0) return false
+        if (filtro === 'favoritas' && figurinha.favorite !== 1) return false
+        if (!busca) return true
+
+        return [
+          figurinha.nome,
+          figurinha.selecao,
+          figurinha.colecao
+        ].some(campo => campo.toLowerCase().includes(busca))
+      })
+      .sort((a, b) => {
+        if (ordemColeta) {
+          const dataA = a.data_coleta || ''
+          const dataB = b.data_coleta || ''
+          return ordemColeta === 'asc'
+            ? dataA.localeCompare(dataB)
+            : dataB.localeCompare(dataA)
+        }
+
+        return `${a.colecao}${a.selecao}${a.nome}`
+          .localeCompare(`${b.colecao}${b.selecao}${b.nome}`)
+      })
+  }
+
   const database = await getDb()
   await garantirColecaoUsuario(userId)
 
@@ -261,6 +479,22 @@ export async function listarFigurinhas(
 
 export async function estatisticasAlbum(userId: number) {
   await initDatabase()
+
+  if (isWeb) {
+    const figurinhas = await listarFigurinhas(userId)
+    const coletadas = figurinhas.filter(figurinha => figurinha.coletada === 1)
+    const total = figurinhas.length
+
+    return {
+      total,
+      coletadas: coletadas.length,
+      pendentes: total - coletadas.length,
+      raras: coletadas.filter(figurinha => figurinha.raridade === 'Rara').length,
+      brilhantes: coletadas.filter(figurinha => figurinha.raridade === 'Brilhante').length,
+      percentual: total > 0 ? Math.round((coletadas.length / total) * 100) : 0
+    }
+  }
+
   const database = await getDb()
   await garantirColecaoUsuario(userId)
 
@@ -295,6 +529,36 @@ export async function estatisticasAlbum(userId: number) {
 
 export async function rankingColecionador(userId: number) {
   await initDatabase()
+
+  if (isWeb) {
+    const figurinhas = await listarFigurinhas(userId, 'coletadas')
+    const pontuacao = figurinhas.reduce((total, figurinha) => {
+      if (figurinha.raridade === 'Brilhante') return total + 10
+      if (figurinha.raridade === 'Rara') return total + 5
+      return total + 1
+    }, 0)
+    const niveis = [
+      { nome: 'Bronze', minimo: 0, proximo: 101 },
+      { nome: 'Prata', minimo: 101, proximo: 251 },
+      { nome: 'Ouro', minimo: 251, proximo: 501 },
+      { nome: 'Diamante', minimo: 501, proximo: null }
+    ]
+    const nivel = [...niveis]
+      .reverse()
+      .find(item => pontuacao >= item.minimo) || niveis[0]
+    const pontosProximoNivel = nivel.proximo
+    const progressoProximoNivel = pontosProximoNivel
+      ? Math.min(1, (pontuacao - nivel.minimo) / (pontosProximoNivel - nivel.minimo))
+      : 1
+
+    return {
+      pontuacao,
+      nivel: nivel.nome,
+      pontosProximoNivel,
+      progressoProximoNivel
+    }
+  }
+
   const database = await getDb()
   await garantirColecaoUsuario(userId)
 
@@ -342,6 +606,13 @@ export async function rankingColecionador(userId: number) {
 
 export async function ultimasColetadas(userId: number, limite = 10) {
   await initDatabase()
+
+  if (isWeb) {
+    return (await listarFigurinhas(userId, 'coletadas', '', 'desc'))
+      .filter(figurinha => figurinha.data_coleta)
+      .slice(0, limite)
+  }
+
   const database = await getDb()
   await garantirColecaoUsuario(userId)
 
@@ -375,6 +646,32 @@ export async function ultimasColetadas(userId: number, limite = 10) {
 
 export async function atualizarStatus(userId: number, stickerId: number, coletada: number) {
   await initDatabase()
+
+  if (isWeb) {
+    const store = carregarWebStore()
+    garantirColecaoUsuarioWeb(store, userId)
+    const dataColeta = coletada === 1 ? new Date().toISOString() : null
+
+    const userSticker = store.userStickers.find(
+      item => item.user_id === userId && item.sticker_id === stickerId
+    )
+    const figurinha = store.figurinhas.find(item => item.id === stickerId)
+
+    if (userSticker) {
+      userSticker.coletada = coletada
+      userSticker.data_coleta = dataColeta
+    }
+
+    if (figurinha) {
+      figurinha.coletada = coletada
+      figurinha.collected_at = dataColeta
+    }
+
+    salvarWebStore(store)
+    await verificarConquistas(userId)
+    return
+  }
+
   const database = await getDb()
   await garantirColecaoUsuario(userId)
 
@@ -406,6 +703,28 @@ export async function atualizarStatus(userId: number, stickerId: number, coletad
 
 export async function atualizarFavorito(userId: number, stickerId: number, favorite: number) {
   await initDatabase()
+
+  if (isWeb) {
+    const store = carregarWebStore()
+    garantirColecaoUsuarioWeb(store, userId)
+
+    const userSticker = store.userStickers.find(
+      item => item.user_id === userId && item.sticker_id === stickerId
+    )
+    const figurinha = store.figurinhas.find(item => item.id === stickerId)
+
+    if (userSticker) {
+      userSticker.favorite = favorite
+    }
+
+    if (figurinha) {
+      figurinha.favorite = favorite
+    }
+
+    salvarWebStore(store)
+    return
+  }
+
   const database = await getDb()
   await garantirColecaoUsuario(userId)
 
@@ -430,6 +749,8 @@ export async function atualizarFavorito(userId: number, stickerId: number, favor
 }
 
 export async function popularFigurinhas() {
+  if (isWeb) return
+
   const database = await getDb()
   const res = await database.query(`SELECT COUNT(*) AS total FROM figurinha`)
   const total = Number(res.values?.[0]?.total || 0)
@@ -485,6 +806,8 @@ export async function popularFigurinhas() {
 }
 
 export async function popularConquistas() {
+  if (isWeb) return
+
   const database = await getDb()
 
   for (const conquista of conquistasPadrao) {
@@ -501,6 +824,25 @@ export async function popularConquistas() {
 
 export async function listarConquistas(userId: number) {
   await initDatabase()
+
+  if (isWeb) {
+    await verificarConquistas(userId)
+
+    const store = carregarWebStore()
+
+    return store.achievements.map(conquista => {
+      const userAchievement = store.userAchievements.find(
+        item => item.user_id === userId && item.achievement_id === conquista.id
+      )
+
+      return {
+        ...conquista,
+        data_desbloqueio: userAchievement?.data_desbloqueio || null,
+        desbloqueada: userAchievement ? 1 : 0
+      }
+    })
+  }
+
   const database = await getDb()
   await verificarConquistas(userId)
 
@@ -530,6 +872,25 @@ export async function listarConquistas(userId: number) {
 }
 
 export async function desbloquearConquista(userId: number, achievementId: number) {
+  if (isWeb) {
+    const store = carregarWebStore()
+    const existe = store.userAchievements.some(
+      item => item.user_id === userId && item.achievement_id === achievementId
+    )
+
+    if (!existe) {
+      store.userAchievements.push({
+        id: store.userAchievements.length + 1,
+        user_id: userId,
+        achievement_id: achievementId,
+        data_desbloqueio: new Date().toISOString()
+      })
+      salvarWebStore(store)
+    }
+
+    return
+  }
+
   const database = await getDb()
 
   await database.run(
@@ -543,6 +904,16 @@ export async function desbloquearConquista(userId: number, achievementId: number
 }
 
 async function percentualColecao(userId: number, colecao: string) {
+  if (isWeb) {
+    const figurinhas = await listarFigurinhas(userId)
+    const figurinhasColecao = figurinhas.filter(figurinha => figurinha.colecao === colecao)
+    const coletadas = figurinhasColecao.filter(figurinha => figurinha.coletada === 1)
+
+    return figurinhasColecao.length > 0
+      ? Math.round((coletadas.length / figurinhasColecao.length) * 100)
+      : 0
+  }
+
   const database = await getDb()
   const res = await database.query(
     `
@@ -566,6 +937,45 @@ async function percentualColecao(userId: number, colecao: string) {
 }
 
 export async function verificarConquistas(userId: number) {
+  if (isWeb) {
+    const store = carregarWebStore()
+    garantirColecaoUsuarioWeb(store, userId)
+    salvarWebStore(store)
+
+    const stats = await estatisticasAlbum(userId)
+
+    for (const conquista of store.achievements) {
+      let desbloqueou = false
+
+      if (conquista.tipo === 'total') {
+        desbloqueou = stats.coletadas >= Number(conquista.alvo)
+      }
+
+      if (conquista.tipo === 'raras') {
+        desbloqueou = stats.raras >= Number(conquista.alvo)
+      }
+
+      if (conquista.tipo === 'brilhantes') {
+        desbloqueou = stats.brilhantes >= Number(conquista.alvo)
+      }
+
+      if (conquista.tipo === 'percentual') {
+        desbloqueou = stats.percentual >= Number(conquista.alvo)
+      }
+
+      if (conquista.tipo === 'colecao' && conquista.colecao) {
+        const percentual = await percentualColecao(userId, conquista.colecao)
+        desbloqueou = percentual >= Number(conquista.alvo)
+      }
+
+      if (desbloqueou) {
+        await desbloquearConquista(userId, Number(conquista.id))
+      }
+    }
+
+    return
+  }
+
   const database = await getDb()
   await garantirColecaoUsuario(userId)
 
