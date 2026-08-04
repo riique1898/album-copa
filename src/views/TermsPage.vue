@@ -1,15 +1,12 @@
 <template>
   <IonPage>
-
     <AppHeader
-      titulo="📄 Termo de Uso"
+      titulo="Termo de Uso"
       cor="primary"
     />
 
     <IonContent class="ion-padding">
-
       <IonCard>
-
         <IonCardHeader>
           <IonCardTitle>
             Termo de Uso
@@ -17,9 +14,7 @@
         </IonCardHeader>
 
         <IonCardContent>
-
           <div class="texto-termo">
-
             <p>
               Este aplicativo foi desenvolvido exclusivamente para fins acadêmicos.
             </p>
@@ -29,13 +24,12 @@
             </p>
 
             <p>
-              Os dados cadastrados são armazenados somente durante a execução da aplicação.
+              Os dados cadastrados são armazenados localmente no dispositivo, usando SQLite no aplicativo Android.
             </p>
 
             <p>
-              O desenvolvedor não se responsabiliza pela perda de dados após o encerramento do aplicativo.
+              O desenvolvedor não se responsabiliza pela perda de dados caso o aplicativo seja desinstalado ou seus dados locais sejam apagados.
             </p>
-
           </div>
 
           <IonItem lines="none">
@@ -53,13 +47,9 @@
           >
             Concordar e Voltar
           </IonButton>
-
         </IonCardContent>
-
       </IonCard>
-
     </IonContent>
-
   </IonPage>
 </template>
 
@@ -68,16 +58,16 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
-  IonPage,
-  IonContent,
+  IonButton,
   IonCard,
+  IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCardContent,
   IonCheckbox,
+  IonContent,
   IonItem,
   IonLabel,
-  IonButton
+  IonPage
 } from '@ionic/vue'
 
 import AppHeader from '@/components/AppHeader.vue'
@@ -96,11 +86,11 @@ ion-content {
 }
 
 ion-card {
-  border-radius: 18px;
+  border-radius: 8px;
 }
 
 .texto-termo {
-  max-height: 180px;
+  max-height: 220px;
   overflow-y: auto;
   text-align: justify;
   margin-bottom: 10px;

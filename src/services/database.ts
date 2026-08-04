@@ -7,13 +7,27 @@ import { Capacitor } from '@capacitor/core'
 
 const sqlite = new SQLiteConnection(CapacitorSQLite)
 const dbName = 'appdata'
-const isWeb = Capacitor.getPlatform() === 'web'
+const platform = Capacitor.getPlatform()
 const webStoreKey = 'album-copa-web-db'
+const demoUser = {
+  nome: 'Usuário Teste',
+  email: 'teste@teste.com',
+  senha: '123456'
+}
 
 let db: SQLiteDBConnection | null = null
 let initialized = false
+let useLocalStore = platform === 'web'
 
 export type StickerFilter = 'todas' | 'coletadas' | 'pendentes' | 'favoritas'
+
+export type CollectionStats = {
+  colecao: string
+  total: number
+  coletadas: number
+  pendentes: number
+  percentual: number
+}
 
 type WebStore = {
   usuarios: any[]
@@ -27,16 +41,16 @@ const conquistasPadrao = [
   ['primeira_figurinha', 'Primeira Figurinha', 'Desbloquear ao coletar a primeira figurinha.', 'medal-outline', 'total', 1, null],
   ['iniciante', 'Iniciante', 'Coletar 10 figurinhas.', 'ribbon-outline', 'total', 10, null],
   ['colecionador', 'Colecionador', 'Coletar 25 figurinhas.', 'albums-outline', 'total', 25, null],
-  ['album_em_construcao', 'Album em Construcao', 'Coletar 50 figurinhas.', 'construct-outline', 'total', 50, null],
-  ['cacador_de_raras', 'Cacador de Raras', 'Coletar 5 figurinhas raras.', 'diamond-outline', 'raras', 5, null],
+  ['album_em_construcao', 'Álbum em Construção', 'Coletar 50 figurinhas.', 'construct-outline', 'total', 50, null],
+  ['cacador_de_raras', 'Caçador de Raras', 'Coletar 5 figurinhas raras.', 'diamond-outline', 'raras', 5, null],
   ['especialista_em_raras', 'Especialista em Raras', 'Coletar 15 figurinhas raras.', 'trophy-outline', 'raras', 15, null],
   ['brilho_inicial', 'Brilho Inicial', 'Coletar 3 figurinhas brilhantes.', 'sparkles-outline', 'brilhantes', 3, null],
   ['mestre_das_brilhantes', 'Mestre das Brilhantes', 'Coletar 10 figurinhas brilhantes.', 'star-outline', 'brilhantes', 10, null],
-  ['album_quase_completo', 'Album Quase Completo', 'Completar 80% do album.', 'podium-outline', 'percentual', 80, null],
-  ['campeao_da_copa', 'Campeao da Copa', 'Completar 100% do album.', 'football-outline', 'percentual', 100, null],
-  ['fase_de_grupos', 'Fase de Grupos Completa', 'Completar a colecao Fase de Grupos.', 'flag-outline', 'colecao', 100, 'Fase de Grupos'],
-  ['mata_mata', 'Mata-Mata Completo', 'Completar a colecao Mata-Mata.', 'shield-checkmark-outline', 'colecao', 100, 'Mata-Mata'],
-  ['lendas', 'Lendas Completas', 'Completar a colecao Lendas.', 'sparkles-outline', 'colecao', 100, 'Lendas']
+  ['album_quase_completo', 'Álbum Quase Completo', 'Completar 80% do álbum.', 'podium-outline', 'percentual', 80, null],
+  ['campeao_da_copa', 'Campeão da Copa', 'Completar 100% do álbum.', 'football-outline', 'percentual', 100, null],
+  ['fase_de_grupos', 'Fase de Grupos Completa', 'Completar a coleção Fase de Grupos.', 'flag-outline', 'colecao', 100, 'Fase de Grupos'],
+  ['mata_mata', 'Mata-Mata Completo', 'Completar a coleção Mata-Mata.', 'shield-checkmark-outline', 'colecao', 100, 'Mata-Mata'],
+  ['lendas', 'Lendas Completas', 'Completar a coleção Lendas.', 'sparkles-outline', 'colecao', 100, 'Lendas']
 ]
 
 function criarFigurinhasPadrao() {
@@ -110,14 +124,15 @@ function carregarWebStore(): WebStore {
       ...item,
       favorite: item.favorite || 0
     }))
-    store.achievements = store.achievements || criarConquistasPadrao()
+    store.achievements = criarConquistasPadrao()
     store.userAchievements = store.userAchievements || []
+    garantirUsuarioDemoWeb(store)
     salvarWebStore(store)
     return store
   }
 
   const store: WebStore = {
-    usuarios: [],
+    usuarios: [{ id: 1, ...demoUser }],
     figurinhas: criarFigurinhasPadrao(),
     achievements: criarConquistasPadrao(),
     userStickers: [],
@@ -130,6 +145,22 @@ function carregarWebStore(): WebStore {
 
 function salvarWebStore(store: WebStore) {
   localStorage.setItem(webStoreKey, JSON.stringify(store))
+}
+
+function garantirUsuarioDemoWeb(store: WebStore) {
+  const existe = store.usuarios.some(usuario => usuario.email === demoUser.email)
+
+  if (!existe) {
+    const maiorId = store.usuarios.reduce(
+      (maior, usuario) => Math.max(maior, Number(usuario.id || 0)),
+      0
+    )
+
+    store.usuarios.push({
+      id: maiorId + 1,
+      ...demoUser
+    })
+  }
 }
 
 function garantirColecaoUsuarioWeb(store: WebStore, userId: number) {
@@ -207,13 +238,23 @@ async function addColumnIfMissing(
 export async function initDatabase() {
   if (initialized) return
 
-  if (isWeb) {
+  if (useLocalStore) {
     carregarWebStore()
     initialized = true
     return
   }
 
-  const database = await getDb()
+  let database: SQLiteDBConnection
+
+  try {
+    database = await getDb()
+  } catch (error) {
+    console.warn('SQLite indisponível, usando armazenamento local:', error)
+    useLocalStore = true
+    carregarWebStore()
+    initialized = true
+    return
+  }
 
   await database.execute(`
     CREATE TABLE IF NOT EXISTS usuario (
@@ -287,6 +328,7 @@ export async function initDatabase() {
 
   await popularFigurinhas()
   await popularConquistas()
+  await garantirUsuarioDemo()
 
   initialized = true
 }
@@ -294,7 +336,7 @@ export async function initDatabase() {
 export async function cadastrarUsuario(nome: string, email: string, senha: string) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     const store = carregarWebStore()
     const normalizedEmail = email.trim().toLowerCase()
 
@@ -327,7 +369,7 @@ export async function cadastrarUsuario(nome: string, email: string, senha: strin
 export async function realizarLogin(email: string, senha: string) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     const store = carregarWebStore()
     const normalizedEmail = email.trim().toLowerCase()
 
@@ -348,7 +390,7 @@ export async function realizarLogin(email: string, senha: string) {
 export async function buscarUsuarioEmail(email: string) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     const store = carregarWebStore()
     const normalizedEmail = email.trim().toLowerCase()
 
@@ -377,6 +419,28 @@ async function garantirColecaoUsuario(userId: number) {
   )
 }
 
+async function garantirUsuarioDemo() {
+  const database = await getDb()
+
+  await database.run(
+    `
+    INSERT OR IGNORE INTO usuario (nome, email, senha)
+    VALUES (?, ?, ?)
+    `,
+    [demoUser.nome, demoUser.email, demoUser.senha]
+  )
+
+  const res = await database.query(
+    `SELECT id FROM usuario WHERE email = ?`,
+    [demoUser.email]
+  )
+  const userId = Number(res.values?.[0]?.id || 0)
+
+  if (userId) {
+    await garantirColecaoUsuario(userId)
+  }
+}
+
 export async function listarFigurinhas(
   userId: number,
   filtro: StickerFilter = 'todas',
@@ -385,7 +449,7 @@ export async function listarFigurinhas(
 ) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     const store = carregarWebStore()
     garantirColecaoUsuarioWeb(store, userId)
     salvarWebStore(store)
@@ -480,7 +544,7 @@ export async function listarFigurinhas(
 export async function estatisticasAlbum(userId: number) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     const figurinhas = await listarFigurinhas(userId)
     const coletadas = figurinhas.filter(figurinha => figurinha.coletada === 1)
     const total = figurinhas.length
@@ -530,7 +594,7 @@ export async function estatisticasAlbum(userId: number) {
 export async function rankingColecionador(userId: number) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     const figurinhas = await listarFigurinhas(userId, 'coletadas')
     const pontuacao = figurinhas.reduce((total, figurinha) => {
       if (figurinha.raridade === 'Brilhante') return total + 10
@@ -604,10 +668,74 @@ export async function rankingColecionador(userId: number) {
   }
 }
 
+export async function estatisticasPorColecao(userId: number): Promise<CollectionStats[]> {
+  await initDatabase()
+
+  if (useLocalStore) {
+    const figurinhas = await listarFigurinhas(userId)
+    const porColecao = figurinhas.reduce<Record<string, CollectionStats>>((acc, figurinha) => {
+      const nomeColecao = figurinha.colecao || 'Base'
+
+      if (!acc[nomeColecao]) {
+        acc[nomeColecao] = {
+          colecao: nomeColecao,
+          total: 0,
+          coletadas: 0,
+          pendentes: 0,
+          percentual: 0
+        }
+      }
+
+      acc[nomeColecao].total += 1
+      acc[nomeColecao].coletadas += figurinha.coletada === 1 ? 1 : 0
+      acc[nomeColecao].pendentes = acc[nomeColecao].total - acc[nomeColecao].coletadas
+      acc[nomeColecao].percentual = acc[nomeColecao].total > 0
+        ? Math.round((acc[nomeColecao].coletadas / acc[nomeColecao].total) * 100)
+        : 0
+
+      return acc
+    }, {})
+
+    return Object.values(porColecao).sort((a, b) => a.colecao.localeCompare(b.colecao))
+  }
+
+  const database = await getDb()
+  await garantirColecaoUsuario(userId)
+
+  const res = await database.query(
+    `
+    SELECT
+      f.colecao,
+      COUNT(*) AS total,
+      SUM(CASE WHEN us.coletada = 1 THEN 1 ELSE 0 END) AS coletadas
+    FROM figurinha f
+    INNER JOIN user_stickers us
+      ON us.sticker_id = f.id
+      AND us.user_id = ?
+    GROUP BY f.colecao
+    ORDER BY f.colecao
+    `,
+    [userId]
+  )
+
+  return (res.values || []).map((row: any) => {
+    const total = Number(row.total || 0)
+    const coletadas = Number(row.coletadas || 0)
+
+    return {
+      colecao: row.colecao,
+      total,
+      coletadas,
+      pendentes: total - coletadas,
+      percentual: total > 0 ? Math.round((coletadas / total) * 100) : 0
+    }
+  })
+}
+
 export async function ultimasColetadas(userId: number, limite = 10) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     return (await listarFigurinhas(userId, 'coletadas', '', 'desc'))
       .filter(figurinha => figurinha.data_coleta)
       .slice(0, limite)
@@ -647,7 +775,7 @@ export async function ultimasColetadas(userId: number, limite = 10) {
 export async function atualizarStatus(userId: number, stickerId: number, coletada: number) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     const store = carregarWebStore()
     garantirColecaoUsuarioWeb(store, userId)
     const dataColeta = coletada === 1 ? new Date().toISOString() : null
@@ -704,7 +832,7 @@ export async function atualizarStatus(userId: number, stickerId: number, coletad
 export async function atualizarFavorito(userId: number, stickerId: number, favorite: number) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     const store = carregarWebStore()
     garantirColecaoUsuarioWeb(store, userId)
 
@@ -749,7 +877,7 @@ export async function atualizarFavorito(userId: number, stickerId: number, favor
 }
 
 export async function popularFigurinhas() {
-  if (isWeb) return
+  if (useLocalStore) return
 
   const database = await getDb()
   const res = await database.query(`SELECT COUNT(*) AS total FROM figurinha`)
@@ -806,16 +934,23 @@ export async function popularFigurinhas() {
 }
 
 export async function popularConquistas() {
-  if (isWeb) return
+  if (useLocalStore) return
 
   const database = await getDb()
 
   for (const conquista of conquistasPadrao) {
     await database.run(
       `
-      INSERT OR IGNORE INTO achievements
+      INSERT INTO achievements
         (chave, nome, descricao, icone, tipo, alvo, colecao)
       VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(chave) DO UPDATE SET
+        nome = excluded.nome,
+        descricao = excluded.descricao,
+        icone = excluded.icone,
+        tipo = excluded.tipo,
+        alvo = excluded.alvo,
+        colecao = excluded.colecao
       `,
       conquista
     )
@@ -825,7 +960,7 @@ export async function popularConquistas() {
 export async function listarConquistas(userId: number) {
   await initDatabase()
 
-  if (isWeb) {
+  if (useLocalStore) {
     await verificarConquistas(userId)
 
     const store = carregarWebStore()
@@ -872,7 +1007,7 @@ export async function listarConquistas(userId: number) {
 }
 
 export async function desbloquearConquista(userId: number, achievementId: number) {
-  if (isWeb) {
+  if (useLocalStore) {
     const store = carregarWebStore()
     const existe = store.userAchievements.some(
       item => item.user_id === userId && item.achievement_id === achievementId
@@ -904,7 +1039,7 @@ export async function desbloquearConquista(userId: number, achievementId: number
 }
 
 async function percentualColecao(userId: number, colecao: string) {
-  if (isWeb) {
+  if (useLocalStore) {
     const figurinhas = await listarFigurinhas(userId)
     const figurinhasColecao = figurinhas.filter(figurinha => figurinha.colecao === colecao)
     const coletadas = figurinhasColecao.filter(figurinha => figurinha.coletada === 1)
@@ -937,7 +1072,7 @@ async function percentualColecao(userId: number, colecao: string) {
 }
 
 export async function verificarConquistas(userId: number) {
-  if (isWeb) {
+  if (useLocalStore) {
     const store = carregarWebStore()
     garantirColecaoUsuarioWeb(store, userId)
     salvarWebStore(store)

@@ -109,7 +109,7 @@ async function cadastrar() {
   }
 
   if (senha.value !== confirmarSenha.value) {
-    alert('As senhas nao coincidem')
+    alert('As senhas não coincidem')
     return
   }
 
@@ -121,14 +121,14 @@ async function cadastrar() {
     )
 
     if (!sucesso) {
-      alert('Email ja cadastrado')
+      alert('Email já cadastrado')
       return
     }
 
     router.replace('/tabs/tab1')
   } catch (erro) {
     console.error('Erro no cadastro:', erro)
-    alert('Nao foi possivel cadastrar. Tente novamente.')
+    alert('Não foi possível cadastrar. Tente novamente.')
   }
 }
 </script>

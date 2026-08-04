@@ -1,14 +1,14 @@
 <template>
   <IonPage>
     <AppHeader
-      titulo="Estatisticas"
+      titulo="Estatísticas"
       cor="success"
     />
 
     <IonContent class="ion-padding">
       <IonCard class="summary-card">
         <IonCardHeader>
-          <IonCardTitle>Progresso do Album</IonCardTitle>
+          <IonCardTitle>Progresso do Álbum</IonCardTitle>
         </IonCardHeader>
 
         <IonCardContent>
@@ -81,7 +81,34 @@
 
       <IonCard>
         <IonCardHeader>
-          <IonCardTitle>Ultimas 10 coletas</IonCardTitle>
+          <IonCardTitle>Progresso por Coleção</IonCardTitle>
+        </IonCardHeader>
+
+        <IonCardContent>
+          <div
+            v-for="colecao in colecoes"
+            :key="colecao.colecao"
+            class="collection-progress"
+          >
+            <div class="progress-row">
+              <strong>{{ colecao.colecao }}</strong>
+              <IonBadge color="primary">
+                {{ colecao.percentual }}%
+              </IonBadge>
+            </div>
+
+            <IonProgressBar :value="colecao.percentual / 100" />
+
+            <p>
+              {{ colecao.coletadas }} de {{ colecao.total }} figurinhas coletadas
+            </p>
+          </div>
+        </IonCardContent>
+      </IonCard>
+
+      <IonCard>
+        <IonCardHeader>
+          <IonCardTitle>Últimas 10 coletas</IonCardTitle>
         </IonCardHeader>
 
         <IonCardContent>
@@ -135,6 +162,7 @@ const {
   estatisticas,
   ranking,
   ultimas,
+  colecoes,
   carregarFigurinhas
 } = useAlbum()
 
@@ -153,11 +181,11 @@ const corNivel = computed(() => {
 
 const textoProximoNivel = computed(() => {
   if (!ranking.value.pontosProximoNivel) {
-    return 'Nivel maximo alcancado.'
+    return 'Nível máximo alcançado.'
   }
 
   const faltam = ranking.value.pontosProximoNivel - ranking.value.pontuacao
-  return `Faltam ${faltam} pontos para o proximo nivel.`
+  return `Faltam ${faltam} pontos para o próximo nível.`
 })
 
 function formatarData(data?: string) {
@@ -203,9 +231,18 @@ ion-card {
 
 .stats-grid p,
 .ranking-card p,
+.collection-progress p,
 .vazio {
   color: #666;
   margin: 0;
+}
+
+.collection-progress {
+  margin-bottom: 18px;
+}
+
+.collection-progress:last-child {
+  margin-bottom: 0;
 }
 
 .progress-row {

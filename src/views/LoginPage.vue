@@ -9,7 +9,7 @@
     <IonContent class="ion-padding">
       <IonCard>
         <IonCardHeader>
-          <IonCardTitle>Album da Copa</IonCardTitle>
+          <IonCardTitle>Álbum da Copa</IonCardTitle>
         </IonCardHeader>
 
         <IonCardContent>
@@ -100,10 +100,10 @@ async function entrar() {
       return
     }
 
-    alert('Login invalido')
+    alert('Login inválido')
   } catch (erro) {
     console.error('Erro no login:', erro)
-    alert('Nao foi possivel entrar. Verifique o SQLite no Logcat.')
+    alert('Não foi possível entrar. Verifique o SQLite no Logcat.')
   }
 }
 </script>

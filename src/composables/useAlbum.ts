@@ -4,9 +4,11 @@ import {
   atualizarFavorito,
   atualizarStatus,
   estatisticasAlbum,
+  estatisticasPorColecao,
   listarFigurinhas,
   rankingColecionador,
   ultimasColetadas,
+  type CollectionStats,
   type StickerFilter
 } from '@/services/database'
 import { useAuth } from '@/composables/useAuth'
@@ -27,6 +29,7 @@ const ranking = ref({
   progressoProximoNivel: 0
 })
 const ultimas = ref<any[]>([])
+const colecoes = ref<CollectionStats[]>([])
 
 export function useAlbum() {
   const { getUser } = useAuth()
@@ -46,6 +49,7 @@ export function useAlbum() {
     estatisticas.value = await estatisticasAlbum(userId())
     ranking.value = await rankingColecionador(userId())
     ultimas.value = await ultimasColetadas(userId())
+    colecoes.value = await estatisticasPorColecao(userId())
   }
 
   async function carregarColetadas(ordem: 'asc' | 'desc' = 'desc') {
@@ -95,6 +99,7 @@ export function useAlbum() {
     estatisticas,
     ranking,
     ultimas,
+    colecoes,
     carregarFigurinhas,
     carregarColetadas,
     carregarPendentes,

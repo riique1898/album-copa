@@ -1,15 +1,12 @@
 <template>
   <IonPage>
-
     <AppHeader
-      titulo="🔒 Política de Privacidade"
+      titulo="Política de Privacidade"
       cor="primary"
     />
 
     <IonContent class="ion-padding">
-
       <IonCard>
-
         <IonCardHeader>
           <IonCardTitle>
             Política de Privacidade
@@ -17,19 +14,17 @@
         </IonCardHeader>
 
         <IonCardContent>
-
           <div class="texto-privacidade">
-
             <p>
               Esta Política de Privacidade descreve como as informações dos usuários são tratadas dentro do aplicativo Álbum da Copa do Mundo.
             </p>
 
             <p>
-              O aplicativo coleta apenas os dados fornecidos voluntariamente pelo usuário durante o cadastro, como nome, e-mail e senha.
+              O aplicativo coleta apenas os dados fornecidos voluntariamente durante o cadastro, como nome, e-mail e senha.
             </p>
 
             <p>
-              As informações são utilizadas exclusivamente para autenticação e demonstração das funcionalidades da aplicação.
+              As informações são utilizadas exclusivamente para autenticação e demonstração das funcionalidades do aplicativo.
             </p>
 
             <p>
@@ -37,13 +32,12 @@
             </p>
 
             <p>
-              Como este projeto possui finalidade acadêmica, os dados permanecem apenas durante a execução da aplicação.
+              Como este projeto possui finalidade acadêmica, os dados permanecem armazenados localmente no dispositivo do usuário.
             </p>
 
             <p>
               Ao utilizar o aplicativo, o usuário declara estar ciente e de acordo com esta Política de Privacidade.
             </p>
-
           </div>
 
           <IonItem lines="none">
@@ -61,13 +55,9 @@
           >
             Concordar e Voltar
           </IonButton>
-
         </IonCardContent>
-
       </IonCard>
-
     </IonContent>
-
   </IonPage>
 </template>
 
@@ -76,16 +66,16 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
-  IonPage,
-  IonContent,
+  IonButton,
   IonCard,
+  IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCardContent,
   IonCheckbox,
+  IonContent,
   IonItem,
   IonLabel,
-  IonButton
+  IonPage
 } from '@ionic/vue'
 
 import AppHeader from '@/components/AppHeader.vue'
@@ -104,11 +94,11 @@ ion-content {
 }
 
 ion-card {
-  border-radius: 18px;
+  border-radius: 8px;
 }
 
 .texto-privacidade {
-  max-height: 180px;
+  max-height: 220px;
   overflow-y: auto;
   text-align: justify;
   margin-bottom: 10px;

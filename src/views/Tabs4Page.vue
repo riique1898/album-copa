@@ -8,12 +8,16 @@
     <IonContent class="ion-padding">
       <IonCard class="progress-card">
         <IonCardHeader>
-          <IonCardTitle>Progresso do Album</IonCardTitle>
+          <IonCardTitle>Progresso do Álbum</IonCardTitle>
         </IonCardHeader>
 
         <IonCardContent>
           <IonProgressBar :value="progressoAlbum" />
-          <p>{{ Math.round(progressoAlbum * 100) }}% concluido</p>
+          <p>{{ Math.round(progressoAlbum * 100) }}% concluído</p>
+
+          <IonBadge color="tertiary">
+            {{ totalDesbloqueadas }} de {{ conquistas.length }} conquistas desbloqueadas
+          </IonBadge>
         </IonCardContent>
       </IonCard>
 
@@ -52,6 +56,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { onIonViewWillEnter } from '@ionic/vue'
 
 import {
@@ -85,6 +90,10 @@ import AppHeader from '@/components/AppHeader.vue'
 import { useAchievements } from '@/composables/useAchievements'
 
 const { conquistas, progressoAlbum, carregarConquistas } = useAchievements()
+
+const totalDesbloqueadas = computed(() =>
+  conquistas.value.filter(conquista => conquista.desbloqueada).length
+)
 
 const icones: Record<string, string> = {
   'albums-outline': albumsOutline,

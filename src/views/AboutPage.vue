@@ -1,30 +1,26 @@
 <template>
   <IonPage>
-
     <AppHeader
-      titulo="ℹ️ Sobre o Aplicativo"
+      titulo="Sobre o Aplicativo"
       cor="primary"
     />
 
     <IonContent class="ion-padding">
-
       <IonCard>
-
         <IonCardHeader>
           <IonCardTitle>
-            🏆 Álbum da Copa do Mundo
+            Álbum da Copa do Mundo
           </IonCardTitle>
         </IonCardHeader>
 
         <IonCardContent>
-
           <p>
             <strong>Versão:</strong> 1.0.0
           </p>
 
           <p>
-            Aplicativo desenvolvido para a disciplina utilizando
-            Vue 3 e Ionic Framework.
+            Aplicativo desenvolvido para a disciplina utilizando Vue 3,
+            Ionic Framework e persistência local em SQLite.
           </p>
 
           <IonButton
@@ -32,7 +28,7 @@
             color="primary"
             router-link="/terms"
           >
-            📄 Termo de Uso
+            Termo de Uso
           </IonButton>
 
           <IonButton
@@ -40,7 +36,7 @@
             color="secondary"
             router-link="/privacy"
           >
-            🔒 Política de Privacidade
+            Política de Privacidade
           </IonButton>
 
           <IonButton
@@ -48,15 +44,11 @@
             color="medium"
             @click="router.back()"
           >
-            ← Voltar
+            Voltar
           </IonButton>
-
         </IonCardContent>
-
       </IonCard>
-
     </IonContent>
-
   </IonPage>
 </template>
 
@@ -64,13 +56,13 @@
 import { useRouter } from 'vue-router'
 
 import {
-  IonPage,
-  IonContent,
+  IonButton,
   IonCard,
+  IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCardContent,
-  IonButton
+  IonContent,
+  IonPage
 } from '@ionic/vue'
 
 import AppHeader from '@/components/AppHeader.vue'
@@ -84,9 +76,9 @@ ion-content {
 }
 
 ion-card {
-  border-radius: 20px;
+  border-radius: 8px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 ion-card-title {

@@ -1,11 +1,9 @@
 <template>
   <IonPage>
     <IonTabs>
-
       <IonRouterOutlet />
 
       <IonTabBar slot="bottom">
-
         <IonTabButton tab="album" href="/tabs/tab1">
           <IonIcon :icon="albumsOutline" />
           <IonLabel>Álbum</IonLabel>
@@ -28,31 +26,29 @@
 
         <IonTabButton tab="estatisticas" href="/tabs/stats">
           <IonIcon :icon="statsChartOutline" />
-          <IonLabel>Estatisticas</IonLabel>
+          <IonLabel>Estatísticas</IonLabel>
         </IonTabButton>
-
       </IonTabBar>
-
     </IonTabs>
   </IonPage>
 </template>
 
 <script setup lang="ts">
 import {
+  IonIcon,
+  IonLabel,
   IonPage,
-  IonTabs,
+  IonRouterOutlet,
   IonTabBar,
   IonTabButton,
-  IonLabel,
-  IonIcon,
-  IonRouterOutlet
+  IonTabs
 } from '@ionic/vue'
 
 import {
   albumsOutline,
-  statsChartOutline,
-  trophyOutline,
+  personOutline,
   starOutline,
-  personOutline
+  statsChartOutline,
+  trophyOutline
 } from 'ionicons/icons'
 </script>
